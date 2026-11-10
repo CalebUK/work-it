@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0f766e">
 <title>Work It</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -27,12 +27,25 @@ header{background:var(--accent);color:#fff;padding:14px 16px 0}
 header h1{margin:0;font-size:19px;letter-spacing:.2px}
 header .sub{opacity:.85;font-size:13px;margin-bottom:10px}
 nav{display:flex;gap:2px;overflow-x:auto}
-nav button{background:none;border:0;color:#fff;opacity:.75;padding:10px 12px;font:inherit;font-weight:600;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav button{background:none;border:0;color:#fff;opacity:.75;padding:10px 12px;font:inherit;font-weight:600;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px}
+nav button svg{width:17px;height:17px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 nav button.on{opacity:1;border-bottom-color:#fff}
+/* Phones: app-style tab bar fixed to the bottom, every tab one tap away */
+@media (max-width: 640px){
+  header{padding-bottom:12px}
+  header .sub{margin-bottom:0}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(7,1fr);gap:0;overflow:visible;
+      background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -4px 16px rgba(0,0,0,.12)}
+  nav button{flex-direction:column;gap:3px;padding:8px 0 7px;font-size:10.5px;font-weight:600;color:var(--muted);opacity:1;border-bottom:0;border-top:3px solid transparent;min-width:0}
+  nav button svg{width:22px;height:22px}
+  nav button.on{color:var(--accent);border-top-color:var(--accent)}
+  main{padding-bottom:calc(84px + env(safe-area-inset-bottom))}
+  .toast{bottom:calc(82px + env(safe-area-inset-bottom))}
+}
 main{max-width:860px;margin:0 auto;padding:16px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
 .card h2{margin:0 0 10px;font-size:16px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
 .stat{background:var(--bg);border-radius:10px;padding:10px 12px}
 .stat .k{font-size:12px;color:var(--muted)}
 .stat .v{font-size:22px;font-weight:700}
@@ -100,13 +113,13 @@ svg text{fill:var(--muted);font-size:11px}
   <h1 style="display:flex;align-items:center;gap:10px"><img src="icon.svg" alt="" width="30" height="30" style="border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,.35)">Work It</h1>
   <div class="sub" id="hdrSub"></div>
   <nav id="nav">
-    <button data-tab="today" class="on">Today</button>
-    <button data-tab="plan">Plan</button>
-    <button data-tab="races">Races</button>
-    <button data-tab="progress">Progress</button>
-    <button data-tab="gym">Gym</button>
-    <button data-tab="import">Garmin import</button>
-    <button data-tab="settings">Settings</button>
+    <button data-tab="today" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Today</span></button>
+    <button data-tab="plan"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Plan</span></button>
+    <button data-tab="races"><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/></svg><span>Races</span></button>
+    <button data-tab="progress"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 16v-4M11 16V8M16 16v-6M20 16V5"/></svg><span>Progress</span></button>
+    <button data-tab="gym"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg><span>Gym</span></button>
+    <button data-tab="import"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/></svg><span>Sync</span></button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
   </nav>
 </header>
 <main>
@@ -154,7 +167,7 @@ const num = v => { if (v==null) return NaN; const n = parseFloat(String(v).repla
 /* ============================== state ============================== */
 const DEFAULT_SETTINGS = {
   targetRaceId: '', units: 'km', runDays: 3, gymDays: 2,
-  maxHR: '', base5k: '', planStart: ymd(mondayOf(today())), name: '',
+  maxHR: '', base5k: '', planStart: ymd(mondayOf(today())), startDay: ymd(today()), name: '',
   lthr: '', restHR: '',
   wUnit: 'kg', targetKg: ''
 };
@@ -172,6 +185,11 @@ function migrate(s){
     st.settings.targetRaceId = 'r1';
   }
   delete st.settings.raceDate; delete st.settings.goal;
+  if (!(s.settings||{}).startDay && s.settings){ // older data: plan began the day after its Monday
+    const d = addDays(parseYMD(st.settings.planStart), 1);
+    st.settings.startDay = ymd(d < today() ? d : today());
+  }
+  st.settings.planStart = ymd(mondayOf(parseYMD(st.settings.startDay)));
   return st;
 }
 function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){ toast('Could not save – storage full or blocked'); } }
@@ -552,8 +570,9 @@ function buildPlan(){
     // Wednesday is always a rest day (office + house group); cardio is purely optional
     if (!(toGo===1 && raceDow <= 2)) add(2,'xt','Rest day · house group', toGo <= 2 ? 'Rest. Optional: 15 min very easy spin if you fancy it.' : 'Rest is the default. Optional: 20–30 min easy bike, cross-trainer or rower in Zone 2 if you get the chance.');
     S.sort((a,b)=>a.dow-b.dow);
-    const plannedKm = S.filter(x=>x.kind!=='gym'&&x.kind!=='xt').reduce((a,x)=>a+(x.distKm||0),0);
-    weeks.push({ w, mon, toGo, phase, cutback, sessions: S, plannedKm });
+    const kept = S.filter(x => x.date >= s.startDay || x.kind === 'race'); // nothing before the day you started
+    const plannedKm = kept.filter(x=>x.kind!=='gym'&&x.kind!=='xt').reduce((a,x)=>a+(x.distKm||0),0);
+    weeks.push({ w, mon, toGo, phase, cutback, sessions: kept, plannedKm });
   }
   // Other races inside the plan become tune-up races on their day
   for (const r of races()){
@@ -644,7 +663,7 @@ function renderToday(){
 function renderPlan(){
   const t = today();
   if (!PLAN){ document.getElementById('tab-plan').innerHTML = `<div class="card">No race yet – add one on the <a href="#" onclick="go('races');return false">Races</a> tab and your plan appears here.</div>`; return; }
-  let html = `<div class="card small muted">Building towards <b>${esc(PLAN.race.name)}</b> (${distLabel(PLAN.D)}). Plan built from week of ${parseYMD(state.settings.planStart).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}. Paces update automatically as you import new Garmin runs. Every 4th week is a lighter cut-back week.</div>`;
+  let html = `<div class="card small muted">Building towards <b>${esc(PLAN.race.name)}</b> (${distLabel(PLAN.D)}). Training started ${parseYMD(state.settings.startDay).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}. Paces update automatically as you import new Garmin runs. Every 4th week is a lighter cut-back week.</div>`;
   for (const wk of PLAN.weeks){
     const doneN = wk.sessions.filter(x => x.kind!=='xt' && isDone(x)).length, tot = wk.sessions.filter(x => x.kind!=='xt').length;
     const cur = t >= wk.mon && t < addDays(wk.mon,7);
@@ -810,7 +829,7 @@ function renderSettings(){
       <div><label>Weight units</label><select id="sWU"><option value="kg">kg</option><option value="st" ${s.wUnit==='st'?'selected':''}>stone & lb</option><option value="lb" ${s.wUnit==='lb'?'selected':''}>lb</option></select></div>
       <div><label>Target weight (in those units)</label><input id="sTW" value="${s.targetKg ? fmtWeight(+s.targetKg) : ''}" placeholder="optional"></div>
     </div>
-    <label>Plan starts (week of)</label><input type="date" id="sStart" value="${s.planStart}">
+    <label>Started training on</label><input type="date" id="sStart" value="${s.startDay}">
     <p class="small muted">Starting fitness and long-run distances are based on the 6 weeks before this date. Move it forward to re-calibrate after a break.</p>
   </div>
   <p><button class="btn" onclick="saveSettings()">Save settings</button></p>`;
@@ -818,7 +837,7 @@ function renderSettings(){
 
 function saveSettings(){
   const g = id => document.getElementById(id).value.trim();
-  Object.assign(state.settings, { units: g('sUnits'), runDays: +g('sRuns'), gymDays: +g('sGym'), maxHR: g('sHR'), lthr: g('sLT'), restHR: g('sRest'), wUnit: g('sWU'), base5k: g('sBase'), planStart: ymd(mondayOf(parseYMD(g('sStart')))) });
+  Object.assign(state.settings, { units: g('sUnits'), runDays: +g('sRuns'), gymDays: +g('sGym'), maxHR: g('sHR'), lthr: g('sLT'), restHR: g('sRest'), wUnit: g('sWU'), base5k: g('sBase'), startDay: g('sStart'), planStart: ymd(mondayOf(parseYMD(g('sStart')))) });
   { const tw = g('sTW'); state.settings.targetKg = tw ? (Math.round(parseWeight(tw)*10)/10 || '') : ''; }
   save(); render(); toast('Saved – plan updated');
 }
