@@ -87,6 +87,10 @@ input,select{width:100%;height:40px;padding:9px 10px;border-radius:8px;border:1p
 @media (prefers-color-scheme: dark){.btn{color:#062b27}}
 .btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent)}
 .btn.danger{background:none;color:var(--race);border:1px solid var(--race)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:8px}
+.btns{display:flex;flex-wrap:wrap;gap:6px}
+details.week > summary::after{content:'';width:8px;height:8px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(45deg);margin:0 4px 4px 0;transition:transform .15s;flex:none}
+details.week[open] > summary::after{transform:rotate(225deg);margin:4px 4px 0 0}
 .drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;cursor:pointer}
 .drop.hover{border-color:var(--accent);background:var(--accent-soft)}
 table{width:100%;border-collapse:collapse;font-size:13px}
@@ -116,9 +120,9 @@ svg text{fill:var(--muted);font-size:11px}
   <nav id="nav">
     <button data-tab="today" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Today</span></button>
     <button data-tab="plan"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Plan</span></button>
-    <button data-tab="races"><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/></svg><span>Races</span></button>
     <button data-tab="progress"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M6 16v-4M11 16V8M16 16v-6M20 16V5"/></svg><span>Progress</span></button>
     <button data-tab="gym"><svg viewBox="0 0 24 24"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/></svg><span>Gym</span></button>
+    <button data-tab="races"><svg viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 4h13l-3 4 3 4H5"/></svg><span>Races</span></button>
     <button data-tab="import"><svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20v-4h-4"/></svg><span>Sync</span></button>
     <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
   </nav>
@@ -435,9 +439,9 @@ function renderRaces(){
       <div class="d">${when(r)}${r.start ? ' · ' + esc(r.start) + ' start' : ''}${r.location ? ' · ' + esc(r.location) : ''}${r.date >= t ? ` · <b>${days} days to go</b>` : ''}</div>
       <div class="d">Goal <b>${esc(r.goal) || '–'}</b>${isFinite(g) ? ` (${fmtPace(g/r.distKm)})` : ''}${res ? ` · Result <b>${fmtTime(res.timeSec)}</b> ${isFinite(g) ? (res.timeSec <= g ? `<span class="pill p-good">beat goal by ${fmtTime(g - res.timeSec)}</span>` : `<span class="pill p-warn">${fmtTime(res.timeSec - g)} over goal</span>`) : ''}` : ''}</div>
       <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
-        ${r.date >= t && !isT ? `<button class="btn ghost" onclick="makeTarget('${r.id}')">Make target race</button>` : ''}
-        <button class="btn ghost" onclick="editRace('${r.id}')">Edit</button>
-        <button class="btn danger" onclick="deleteRace('${r.id}')">Delete</button>
+        ${r.date >= t && !isT ? `<button class="btn ghost sm" onclick="makeTarget('${r.id}')">Make target race</button>` : ''}
+        <button class="btn ghost sm" onclick="editRace('${r.id}')">Edit</button>
+        <button class="btn danger sm" onclick="deleteRace('${r.id}')">Delete</button>
       </div></div></div>`;
   };
   const e = editRaceId ? (state.races||[]).find(r => r.id === editRaceId) : null;
@@ -651,15 +655,33 @@ function renderToday(){
   ${best ? `<div class="small muted" style="margin-top:8px">🏅 Your best ${distShort(P.D)}: <b>${fmtTime(best.timeSec)}</b> (${esc(best.name || distLabel(P.D))}, ${best.date.slice(0,4)}).${best.timeSec <= P.goalT ? " You've already run faster than your goal." : ''}</div>` : ''}
   ${easyCap() ? `<div class="small muted" style="margin-top:8px">❤️ Easy & long runs: keep heart rate under <b>${easyCap()} bpm</b>${lthr() ? ` (Zone 2, from your LTHR of ${lthr()})` : ` (≈78% of max ${mhr})`}. Walk to bring it down – that's fine.</div>` : ''}
   </div>`;
+  // Order on the Today tab: today's session(s) → rest of this week → next week → race summary
+  const statsHtml = html; html = '';
   if (wk){
-    html += `<div class="card"><h2>Week ${wk.w+1} of ${P.n} · ${wk.phase}${wk.cutback?' · cut-back':''}</h2>${wk.sessions.map(sessRow).join('')}</div>`;
+    const tStr = ymd(t), all = P.weeks.flatMap(w => w.sessions);
+    const todays = all.filter(x => x.date === tStr);
+    const rest = wk.sessions.filter(x => x.date > tStr);
+    const upNext = all.find(x => x.date > tStr && x.kind !== 'xt');
     const next = P.weeks[wk.w+1];
-    if (next) html += `<div class="card"><h2 class="muted">Next week · ${next.phase}</h2>${next.sessions.map(sessRow).join('')}</div>`;
+    const km = list => list.filter(x => x.kind === 'run' || x.kind === 'race').reduce((a,x) => a + (x.distKm||0), 0);
+    html += `<div class="card"><h2>Today <span class="small muted">· ${t.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})} · week ${wk.w+1} of ${P.n}, ${wk.phase}${wk.cutback?' (cut-back)':''}</span></h2>
+      ${todays.length ? todays.map(sessRow).join('') : `<p style="margin:0">😴 <b>Rest day.</b> ${upNext ? `<span class="muted">Next up: ${DOW[upNext.dow]} ${parseYMD(upNext.date).getDate()} – ${esc(upNext.title)}</span>` : ''}</p>`}</div>`;
+    html += `<details class="card week" ${openPref('rest', true) ? 'open' : ''} ontoggle="setOpenPref('rest', this.open)"><summary>
+      <span><b>Rest of the week</b></span><span class="small muted">${rest.length ? `${rest.filter(x => x.kind !== 'xt').length} sessions · ${fmtDist(km(rest))}` : 'nothing left'}</span></summary>
+      <div style="margin-top:8px">${rest.length ? rest.map(sessRow).join('') : '<p class="small muted" style="margin:0">That\'s the week done – enjoy the rest.</p>'}</div></details>`;
+    if (next) html += `<details class="card week" ${openPref('next', false) ? 'open' : ''} ontoggle="setOpenPref('next', this.open)"><summary>
+      <span><b>Next week</b> <span class="small muted">· ${next.phase}${next.cutback ? ' (cut-back)' : ''}</span></span><span class="small muted">${fmtDist(next.plannedKm)} planned</span></summary>
+      <div style="margin-top:8px">${next.sessions.map(sessRow).join('')}</div></details>`;
   } else {
     html += `<div class="card">Race is done – congratulations! 🏅</div>`;
   }
+  html += statsHtml;
   document.getElementById('tab-today').innerHTML = html;
 }
+
+// Remember which Today boxes are open/closed (per device; falls back to defaults if storage is blocked)
+function openPref(k, def){ try { const v = localStorage.getItem('workit-open-' + k); return v === null ? def : v === '1'; } catch(e){ return def; } }
+function setOpenPref(k, open){ try { localStorage.setItem('workit-open-' + k, open ? '1' : '0'); } catch(e){} }
 
 function renderPlan(){
   const t = today();
@@ -795,9 +817,9 @@ function renderImport(){
     <p><button class="btn" onclick="addManual()">Add run</button></p>
   </div>
   <div class="card"><h2>Backup</h2><p class="small muted" style="margin-top:0">Everything is saved in this browser only. Export a backup to move it to your phone or another computer.</p>
-    <button class="btn ghost" onclick="exportBackup()">Export backup</button>
-    <button class="btn ghost" onclick="document.getElementById('bk').click()">Restore backup</button><input type="file" id="bk" class="hidden" onchange="restoreBackup(this.files[0])">
-    <button class="btn danger" onclick="if(confirm('Delete all imported activities?')){state.activities=[];save();render();}">Clear activities</button>
+    <div class="btns"><button class="btn ghost sm" onclick="exportBackup()">Export backup</button>
+    <button class="btn ghost sm" onclick="document.getElementById('bk').click()">Restore backup</button><input type="file" id="bk" class="hidden" onchange="restoreBackup(this.files[0])">
+    <button class="btn danger sm" onclick="if(confirm('Delete all imported activities?')){state.activities=[];save();render();}">Clear activities</button></div>
   </div>`;
   const drop = document.getElementById('drop'), file = document.getElementById('file');
   drop.onclick = () => file.click();
@@ -982,9 +1004,9 @@ function stravaCard(){
   return `
   <div class="card"><h2>🔄 Strava sync</h2>
     <p class="small muted" style="margin-top:0">Connected${sv.athlete ? ' as <b>'+esc(sv.athlete)+'</b>' : ''} · last synced ${sv.lastSync ? new Date(sv.lastSync).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) : 'never'}. Syncs automatically when you open the app.</p>
-    <button class="btn" id="svBtn" onclick="stravaSync(true)">Sync now</button>
-    <button class="btn ghost" onclick="stravaSync(true, true)">Re-sync last 6 months</button>
-    <button class="btn danger" onclick="if(confirm('Disconnect Strava?'))stravaReset()">Disconnect</button></div>`;
+    <div class="btns"><button class="btn sm" id="svBtn" onclick="stravaSync(true)">Sync now</button>
+    <button class="btn ghost sm" onclick="stravaSync(true, true)">Re-sync 6 months</button>
+    <button class="btn danger sm" onclick="if(confirm('Disconnect Strava?'))stravaReset()">Disconnect</button></div></div>`;
 }
 const stravaAuthUrl = () => `https://www.strava.com/oauth/authorize?client_id=${encodeURIComponent(state.strava.clientId)}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT)}&approval_prompt=auto&scope=read,activity:read_all`;
 function stravaSaveCreds(){
