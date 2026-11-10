@@ -101,6 +101,11 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .tablewrap{overflow-x:auto}
 svg text{fill:var(--muted);font-size:11px}
 .ex{padding:8px 0;border-top:1px solid var(--line)}
+.fb{font-size:13px;margin-top:4px;padding:6px 9px;border-radius:8px;line-height:1.35}
+.fb-good{background:var(--good-soft);color:var(--ink)}
+.fb-warn{background:var(--warn-soft);color:var(--ink)}
+.fb-bad{background:color-mix(in srgb, var(--race) 16%, transparent);color:var(--ink)}
+.hold{margin:0 0 10px;padding:9px 11px;border-radius:9px;font-size:13px;background:var(--warn-soft);color:var(--ink)}
 .ex:first-of-type{border-top:0}
 .ex b{display:block}
 .note{background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:13px}
@@ -490,6 +495,84 @@ function deleteRace(id){
 }
 function makeTarget(id){ state.settings.targetRaceId = id; save(); render(); toast('Plan now builds towards this race'); }
 
+/* ============================== adapting to what you actually did ============================== */
+// The kind of effort a planned run is meant to be
+function sessEffort(x){
+  if (x.kind === 'race') return 'race';
+  if (/tempo/i.test(x.title)) return 'tempo';
+  if (/goal-pace|sharpener/i.test(x.title)) return 'goal';
+  return 'easy';
+}
+// The main (longest) run recorded on a date
+function mainRun(date){ return runs().filter(r => r.date === date).sort((a,b) => b.distKm - a.distKm)[0] || null; }
+
+// Verdict on a completed run: distance vs plan, heart rate vs the session's purpose
+function sessFeedback(x){
+  if (x.kind !== 'run' || x.date > ymd(today()) || !x.distKm) return '';
+  const a = mainRun(x.date); if (!a) return '';
+  const notes = []; let level = 'good';
+  const bump = l => { if (l === 'bad' || (l === 'warn' && level === 'good')) level = l; };
+  const ratio = a.distKm / x.distKm;
+  if (ratio > 1.2){ notes.push(`${Math.round((ratio-1)*100)}% further than planned – fine now and then, but don't add any more this week.`); bump('warn'); }
+  else if (ratio < 0.8) notes.push(`Shorter than planned – no problem, don't try to make it up later.`);
+  const eff = sessEffort(x), cap = easyCap(), L = lthr(), z = zoneOf(a.avgHR);
+  if (a.avgHR && cap){
+    if (eff === 'easy'){
+      if (a.avgHR > cap + 8){ notes.push(`Avg ${a.avgHR} bpm${z ? ` (Zone ${z})` : ''} – that was a hard run, not an easy one. Slow right down and walk sooner next time.`); bump('bad'); }
+      else if (a.avgHR > cap){ notes.push(`Avg ${a.avgHR} bpm – just over your ${cap} limit. Nearly there.`); bump('warn'); }
+      else notes.push(`Avg ${a.avgHR} bpm – properly easy. 👌`);
+    } else if (eff === 'tempo' && L){
+      if (a.avgHR > Math.round(L*0.98)){ notes.push(`Avg ${a.avgHR} bpm – harder than a tempo needs to be.`); bump('warn'); }
+      else notes.push(`Avg ${a.avgHR} bpm – right effort for a tempo.`);
+    }
+  }
+  if (!notes.length) notes.push('Spot on.');
+  return `<div class="fb fb-${level}">${{ good: '✅', warn: '⚠️', bad: '❤️‍🔥' }[level]} ${notes.join(' ')}</div>`;
+}
+
+// Should this week hold steady instead of progressing? Judged on the previous (finished) week.
+function holdReason(pw, toGo){
+  if (!pw || pw.cutback || toGo <= 3) return null;
+  const end = addDays(pw.mon, 7); if (end > today()) return null;
+  const a = ymd(pw.mon), b = ymd(end);
+  const act = runs().filter(r => r.date >= a && r.date < b).reduce((s,r) => s + r.distKm, 0);
+  const planned = pw.plannedKm, cap = easyCap();
+  if (planned >= 3 && act > planned*1.2) return { why: 'over', txt: `last week you ran ${fmtDist(act)} – ${Math.round((act/planned-1)*100)}% more than planned` };
+  if (planned >= 3 && act < planned*0.5) return { why: 'missed', txt: `last week only ${Math.round(act/planned*100)}% of the planned running got done` };
+  const easy = pw.sessions.filter(x => x.kind === 'run' && sessEffort(x) === 'easy').map(x => mainRun(x.date)).filter(r => r && r.avgHR);
+  const hot = cap ? easy.filter(r => r.avgHR > cap + 5).length : 0;
+  // at least two-thirds of last week's easy runs too hard (never two "hr" holds in a row, so the plan can't stall)
+  if (easy.length >= 2 && hot*3 >= easy.length*2 && pw.hold?.why !== 'hr') return { why: 'hr', txt: `${hot} of your ${easy.length} easy runs last week averaged well above ${cap} bpm` };
+  return null;
+}
+function weekNotes(wk){
+  let h = '';
+  if (wk.hold) h += `<div class="hold">⏸️ <b>Holding steady this week</b> – ${wk.hold.txt}. Distances stay at last week's level so your body can catch up${wk.hold.why === 'hr' ? ' – focus on keeping the easy runs truly easy' : ''}.</div>`;
+  const a = ymd(wk.mon), b = ymd(addDays(wk.mon, 7));
+  const act = runs().filter(r => r.date >= a && r.date < b).reduce((s,r) => s + r.distKm, 0);
+  if (wk.plannedKm >= 3 && act > wk.plannedKm*1.2) h += `<div class="hold">⚠️ You've already run ${fmtDist(act)} this week – ${Math.round((act/wk.plannedKm-1)*100)}% over the plan. Keep everything else easy and skip the optional extras.</div>`;
+  return h;
+}
+
+// Pace you can actually hold just under your easy heart-rate limit, from the last 12 weeks of runs
+function zone2Pace(){
+  const cap = easyCap(); if (!cap) return null;
+  const since = ymd(addDays(today(), -84));
+  const R = runs().filter(r => r.date > since && r.avgHR && r.distKm >= 2 && r.timeSec);
+  const pace = r => r.timeSec / r.distKm;
+  const inZone = R.filter(r => r.avgHR <= cap && r.avgHR >= cap - 15).map(pace).sort((a,b) => a - b);
+  if (inZone.length >= 3) return inZone[Math.floor(inZone.length/2)];      // median of real Zone 2 runs
+  if (R.length < 4) return null;
+  // Otherwise: fit pace against heart rate and read it off just under the limit
+  const xs = R.map(r => r.avgHR), ys = R.map(pace), n = R.length;
+  const mx = xs.reduce((a,b) => a+b)/n, my = ys.reduce((a,b) => a+b)/n;
+  const vx = xs.reduce((a,x) => a + (x-mx)**2, 0)/n; if (vx < 9) return null;   // need some spread in HR
+  const slope = xs.reduce((a,x,i) => a + (x-mx)*(ys[i]-my), 0)/n/vx;           // sec/km per bpm (should be negative)
+  if (!(slope < -0.5 && slope > -40)) return null;
+  const target = cap - 3; if (target < Math.min(...xs) - 25) return null;       // don't extrapolate too far
+  return my + slope*(target - mx);
+}
+
 /* ============================== plan generator ============================== */
 const RW = [[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[8,1],[10,1]];
 
@@ -506,22 +589,27 @@ function buildPlan(){
   const Lpeak = D <= 5.5 ? 8 : D <= 10.5 ? 12 : D <= 21.5 ? 18 : 30;
   const L0 = Math.min(10, Lpeak*0.6, Math.max(3, longestRecent(addDays(start,-1))));
   const peakIdx = Math.max(0, n-3);
+  const nowHmPace = nowFit/HM_KM, zp = zone2Pace();
+  const easyNow = zp ? Math.min(Math.max(zp, nowHmPace*1.0), nowHmPace*1.5) : null; // HR-based easy pace, sanity-clamped
+  let p = 0; // progression step – only advances in weeks that aren't held
   const weeks = [];
 
   for (let w = 0; w < n; w++){
     const mon = addDays(start, w*7), toGo = n - w;
     const phase = toGo===1 ? 'Race week' : toGo===2 ? 'Taper' : toGo<=5 ? 'Peak' : (w < (n-5)*0.5 ? 'Base' : 'Build');
     const cutback = (w+1)%4===0 && toGo>3;
+    const hold = w > 0 ? holdReason(weeks[w-1], toGo) : null;
+    if (w > 0 && !hold) p++;
     // paces from fitness known at that week (past/current) or today's fitness (future)
     const fit = mon > today() ? nowFit : fitnessAt(addDays(mon,6) < today() ? addDays(mon,6) : today());
     const hmPace = fit/HM_KM;
-    const easy = hmPace*1.10, tempo = Math.max(goalPace*0.96, hmPace*0.95);
+    const easy = (easyNow && addDays(mon,6) >= today()) ? easyNow : hmPace*1.10, tempo = Math.max(goalPace*0.96, hmPace*0.95);
     const runWalk = nowFit > 10500 && (phase==='Base' || phase==='Build');
     const rwStart = nowFit > 12600 ? 0 : nowFit > 11700 ? 2 : 4; // fitter → longer run segments
     const rw = RW[Math.min(rwStart + w, RW.length-1)];
     const rwTxt = runWalk ? ` Run/walk: ${rw[0]} min run / ${rw[1]} min walk, repeat.` : '';
 
-    let long = peakIdx===0 ? Lpeak : L0 + (Lpeak - L0) * Math.min(1, w/peakIdx);
+    let long = peakIdx===0 ? Lpeak : L0 + (Lpeak - L0) * Math.min(1, p/peakIdx);
     if (cutback) long *= 0.75;
     if (toGo===2) long = Math.round(Lpeak*0.6);
     long = Math.round(long*2)/2;
@@ -578,7 +666,7 @@ function buildPlan(){
     S.sort((a,b)=>a.dow-b.dow);
     const kept = S.filter(x => x.date >= s.startDay || x.kind === 'race'); // nothing before the day you started
     const plannedKm = kept.filter(x=>x.kind!=='gym'&&x.kind!=='xt').reduce((a,x)=>a+(x.distKm||0),0);
-    weeks.push({ w, mon, toGo, phase, cutback, sessions: kept, plannedKm });
+    weeks.push({ w, mon, toGo, phase, cutback, hold, sessions: kept, plannedKm });
   }
   // Other races inside the plan become tune-up races on their day
   for (const r of races()){
@@ -591,7 +679,7 @@ function buildPlan(){
     wk.sessions.sort((a,b) => a.dow - b.dow);
     wk.plannedKm = wk.sessions.filter(x => x.kind!=='gym' && x.kind!=='xt').reduce((a,x) => a + (x.distKm||0), 0);
   }
-  return { weeks, n, goalT, goalHM, goalPace, startFit, nowFit, race: R0, D };
+  return { weeks, n, goalT, goalHM, goalPace, startFit, nowFit, race: R0, D, easyNow };
 }
 
 /* auto-complete: an imported activity on the same day counts */
@@ -624,7 +712,7 @@ function sessRow(x){
   const actTxt = act.length ? `<div class="small" style="color:var(--good)">✓ Garmin: ${act.map(a => a.isRun ? `${fmtDist(a.distKm)} in ${fmtTime(a.timeSec)} (${fmtPace(a.timeSec/a.distKm)})${a.avgHR?' · '+a.avgHR+' bpm':''}` : esc(a.type)).join('; ')}</div>` : '';
   return `<div class="sess ${x.date===t?'today':''} ${x.date<t?'past':''} ${done?'done':''}">
     <div class="day">${DOW[x.dow]}<b>${d.getDate()}</b></div>
-    <div class="body"><div class="t">${pill} ${esc(x.title)}</div><div class="d">${x.detail}</div>${actTxt}</div>
+    <div class="body"><div class="t">${pill} ${esc(x.title)}</div><div class="d">${x.detail}</div>${actTxt}${sessFeedback(x)}</div>
     <button class="chk ${done?'on':''}" title="Mark done" onclick="toggleDone('${x.id}',${done})">${done?'✓':''}</button>
   </div>`;
 }
@@ -654,7 +742,7 @@ function renderToday(){
   <div style="margin-top:12px" class="small muted">Progress from starting fitness (${fmtTime(toRace(P.startFit, P.D))}) to goal</div>
   <div class="bar"><i style="width:${prog}%"></i></div>
   ${best ? `<div class="small muted" style="margin-top:8px">🏅 Your best ${distShort(P.D)}: <b>${fmtTime(best.timeSec)}</b> (${esc(best.name || distLabel(P.D))}, ${best.date.slice(0,4)}).${best.timeSec <= P.goalT ? " You've already run faster than your goal." : ''}</div>` : ''}
-  ${easyCap() ? `<div class="small muted" style="margin-top:8px">❤️ Easy & long runs: keep heart rate under <b>${easyCap()} bpm</b>${lthr() ? ` (Zone 2, from your LTHR of ${lthr()})` : ` (≈78% of max ${mhr})`}. Walk to bring it down – that's fine.</div>` : ''}
+  ${easyCap() ? `<div class="small muted" style="margin-top:8px">❤️ Easy & long runs: keep heart rate under <b>${easyCap()} bpm</b>${lthr() ? ` (Zone 2, from your LTHR of ${lthr()})` : ` (≈78% of max ${mhr})`}. Walk to bring it down – that's fine.${P.easyNow ? ` From your recent runs, that's about <b>${fmtPace(P.easyNow)}</b> for you right now – it'll get quicker as you get fitter.` : ''}</div>` : ''}
   </div>`;
   // Order on the Today tab: today's session(s) → rest of this week → next week → race summary
   const statsHtml = html; html = '';
@@ -665,7 +753,7 @@ function renderToday(){
     const upNext = all.find(x => x.date > tStr && x.kind !== 'xt');
     const next = P.weeks[wk.w+1];
     const km = list => list.filter(x => x.kind === 'run' || x.kind === 'race').reduce((a,x) => a + (x.distKm||0), 0);
-    html += `<div class="card"><h2>Today <span class="small muted">· ${t.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})} · week ${wk.w+1} of ${P.n}, ${wk.phase}${wk.cutback?' (cut-back)':''}</span></h2>
+    html += `<div class="card"><h2>Today <span class="small muted">· ${t.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'short'})} · week ${wk.w+1} of ${P.n}, ${wk.phase}${wk.cutback?' (cut-back)':''}</span></h2>${weekNotes(wk)}
       ${todays.length ? todays.map(sessRow).join('') : `<p style="margin:0">😴 <b>Rest day.</b> ${upNext ? `<span class="muted">Next up: ${DOW[upNext.dow]} ${parseYMD(upNext.date).getDate()} – ${esc(upNext.title)}</span>` : ''}</p>`}</div>`;
     html += `<details class="card week" ${openPref('rest', true) ? 'open' : ''} ontoggle="setOpenPref('rest', this.open)"><summary>
       <span><b>Rest of the week</b></span><span class="small muted">${rest.length ? `${rest.filter(x => x.kind !== 'xt').length} sessions · ${fmtDist(km(rest))}` : 'nothing left'}</span></summary>
@@ -692,7 +780,7 @@ function renderPlan(){
     const doneN = wk.sessions.filter(x => x.kind!=='xt' && isDone(x)).length, tot = wk.sessions.filter(x => x.kind!=='xt').length;
     const cur = t >= wk.mon && t < addDays(wk.mon,7);
     html += `<details class="card week" ${cur?'open':''}><summary>
-      <span><b>Week ${wk.w+1}</b> · ${wk.mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · ${wk.phase}${wk.cutback?' (cut-back)':''}</span>
+      <span><b>Week ${wk.w+1}</b> · ${wk.mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · ${wk.phase}${wk.cutback?' (cut-back)':''}${wk.hold?' <span class="pill p-warn">holding steady</span>':''}</span>
       <span class="small muted">${fmtDist(wk.plannedKm)} · ${doneN}/${tot} done</span></summary>
       <div style="margin-top:8px">${wk.sessions.map(sessRow).join('')}</div></details>`;
   }
