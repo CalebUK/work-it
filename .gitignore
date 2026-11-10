@@ -1,0 +1,6 @@
+# Personal data – never publish
+Activities.csv
+*.csv
+workit-backup-*.json
+*summarizedActivities*.json
+.claude/

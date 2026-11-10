@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0f766e">
+<title>Work It</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --bg:#f6f7f9;--card:#fff;--ink:#16202a;--muted:#5b6876;--line:#e3e7ec;
+  --accent:#0f766e;--accent-soft:#d6f0ec;--warn:#b45309;--warn-soft:#fdf0dc;
+  --good:#15803d;--good-soft:#dcf3e3;--gym:#6d28d9;--gym-soft:#ece4fb;--race:#be123c;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#0e1318;--card:#161d24;--ink:#e6ebf0;--muted:#94a3b3;--line:#26313b;
+  --accent:#2dd4bf;--accent-soft:#123a36;--warn:#f59e0b;--warn-soft:#3a2a10;
+  --good:#4ade80;--good-soft:#123222;--gym:#a78bfa;--gym-soft:#2a2140;--race:#fb7185;}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--accent);color:#fff;padding:14px 16px 0}
+@media (prefers-color-scheme: dark){header{background:#0b3b37}}
+header h1{margin:0;font-size:19px;letter-spacing:.2px}
+header .sub{opacity:.85;font-size:13px;margin-bottom:10px}
+nav{display:flex;gap:2px;overflow-x:auto}
+nav button{background:none;border:0;color:#fff;opacity:.75;padding:10px 12px;font:inherit;font-weight:600;border-bottom:3px solid transparent;cursor:pointer;white-space:nowrap}
+nav button.on{opacity:1;border-bottom-color:#fff}
+main{max-width:860px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.card h2{margin:0 0 10px;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.stat{background:var(--bg);border-radius:10px;padding:10px 12px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-size:22px;font-weight:700}
+.stat .n{font-size:12px;color:var(--muted)}
+a{color:var(--accent);font-weight:600;text-decoration:underline;text-underline-offset:2px}
+a:hover{opacity:.8}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.p-run{background:var(--accent-soft);color:var(--accent)}
+.p-gym{background:var(--gym-soft);color:var(--gym)}
+.p-xt{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.p-race{background:var(--race);color:#fff}
+.p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-good{background:var(--good-soft);color:var(--good)}
+.sess{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.sess:first-child{border-top:0}
+.sess .day{width:44px;flex:none;font-weight:700;font-size:13px;color:var(--muted)}
+.sess .day b{display:block;color:var(--ink);font-size:16px}
+.sess .body{flex:1;min-width:0}
+.sess .t{font-weight:600}
+.sess .d{font-size:13px;color:var(--muted)}
+.sess.today{background:var(--accent-soft);margin:0 -10px;padding:10px;border-radius:10px;border-top-color:transparent}
+.sess.past:not(.done){opacity:.6}
+.chk{width:26px;height:26px;flex:none;border-radius:8px;border:2px solid var(--line);background:var(--card);cursor:pointer;display:grid;place-items:center;font-weight:900;color:#fff;padding:0}
+.chk.on{background:var(--good);border-color:var(--good)}
+.week{margin-bottom:12px}
+.week summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.week summary::-webkit-details-marker{display:none}
+.bar{height:10px;background:var(--bg);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+input,select{width:100%;height:40px;padding:9px 10px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.row > div{display:flex;flex-direction:column;justify-content:flex-end}
+.row label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{background:var(--accent);color:#fff;border:0;padding:10px 14px;border-radius:9px;font:inherit;font-weight:600;cursor:pointer}
+@media (prefers-color-scheme: dark){.btn{color:#062b27}}
+.btn.ghost{background:none;color:var(--accent);border:1px solid var(--accent)}
+.btn.danger{background:none;color:var(--race);border:1px solid var(--race)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;cursor:pointer}
+.drop.hover{border-color:var(--accent);background:var(--accent-soft)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:6px 4px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+svg text{fill:var(--muted);font-size:11px}
+.ex{padding:8px 0;border-top:1px solid var(--line)}
+.ex:first-of-type{border-top:0}
+.ex b{display:block}
+.note{background:var(--warn-soft);color:var(--ink);border-radius:10px;padding:10px 12px;font-size:13px}
+.hidden{display:none}
+.seg{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px}
+.seg button{flex:1;border:0;background:none;color:var(--muted);font:inherit;font-weight:600;padding:9px;border-radius:9px;cursor:pointer}
+.seg button.on{background:var(--accent-soft);color:var(--accent)}
+.wdel{background:none;border:0;color:var(--muted);cursor:pointer;font-size:16px;padding:0 4px}
+.wdel:hover{color:var(--race)}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<header>
+  <h1 style="display:flex;align-items:center;gap:10px"><img src="icon.svg" alt="" width="30" height="30" style="border-radius:8px;box-shadow:0 0 0 1px rgba(255,255,255,.35)">Work It</h1>
+  <div class="sub" id="hdrSub"></div>
+  <nav id="nav">
+    <button data-tab="today" class="on">Today</button>
+    <button data-tab="plan">Plan</button>
+    <button data-tab="races">Races</button>
+    <button data-tab="progress">Progress</button>
+    <button data-tab="gym">Gym</button>
+    <button data-tab="import">Garmin import</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+</header>
+<main>
+  <section id="tab-today"></section>
+  <section id="tab-plan" class="hidden"></section>
+  <section id="tab-races" class="hidden"></section>
+  <section id="tab-progress" class="hidden"></section>
+  <section id="tab-gym" class="hidden"></section>
+  <section id="tab-import" class="hidden"></section>
+  <section id="tab-settings" class="hidden"></section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================== constants & helpers ============================== */
+const HM_KM = 21.0975, MI = 1.609344, KEY = 'workit-v1';
+const DAY = 86400000;
+const pad = n => String(n).padStart(2,'0');
+const ymd = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const parseYMD = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y,m-1,d); };
+const addDays = (d,n) => new Date(d.getFullYear(), d.getMonth(), d.getDate()+n);
+const mondayOf = d => addDays(d, -((d.getDay()+6)%7));
+const today = () => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); };
+const daysBetween = (a,b) => Math.round((b-a)/DAY);
+const DOW = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function parseTime(s){ // "2:30:00", "32:15.3", "45:00" -> seconds
+  if (s == null) return NaN;
+  s = String(s).trim(); if (!s || s === '--') return NaN;
+  const parts = s.split(':').map(Number);
+  if (parts.some(isNaN)) return NaN;
+  return parts.reduce((a,p) => a*60 + p, 0);
+}
+function fmtTime(sec){
+  if (!isFinite(sec)) return '–';
+  sec = Math.round(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), s = sec%60;
+  return h ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`;
+}
+const U = () => state.settings.units;
+const fmtDist = km => U()==='mi' ? `${(km/MI).toFixed(1)} mi` : `${(+km).toFixed(1)} km`;
+const fmtPace = spk => { if(!isFinite(spk)) return '–'; const s = U()==='mi' ? spk*MI : spk; return `${fmtTime(s)}/${U()}`; };
+const num = v => { if (v==null) return NaN; const n = parseFloat(String(v).replace(/,/g,'')); return n; };
+
+/* ============================== state ============================== */
+const DEFAULT_SETTINGS = {
+  targetRaceId: '', units: 'km', runDays: 3, gymDays: 2,
+  maxHR: '', base5k: '', planStart: ymd(mondayOf(today())), name: '',
+  lthr: '', restHR: '',
+  wUnit: 'kg', targetKg: ''
+};
+let state = load();
+function load(){
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY)); } catch(e){}
+  s = s || {};
+  return migrate(s);
+}
+function migrate(s){
+  const st = { settings: {...DEFAULT_SETTINGS, ...(s.settings||{})}, activities: s.activities||[], done: s.done||{}, strava: s.strava||{}, weights: s.weights||[], races: s.races||[] };
+  if (!s.races && st.settings.raceDate){ // older versions kept a single race in settings
+    st.races = [{ id: 'r1', name: 'My race', date: st.settings.raceDate, start: '', location: '', distKm: HM_KM, goal: st.settings.goal || '' }];
+    st.settings.targetRaceId = 'r1';
+  }
+  delete st.settings.raceDate; delete st.settings.goal;
+  return st;
+}
+function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){ toast('Could not save – storage full or blocked'); } }
+function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2200); }
+
+const runs = () => state.activities.filter(a => a.isRun).sort((a,b) => a.date < b.date ? -1 : 1);
+
+/* ============================== fitness model ============================== */
+// Riegel: T2 = T1 * (D2/D1)^1.06
+const riegel = (t, d, d2=HM_KM) => t * Math.pow(d2/d, 1.06);
+
+function predictHM(asOf){ // best HM prediction from runs >=3km in the 6 weeks up to asOf
+  const end = ymd(asOf), start = ymd(addDays(asOf,-42));
+  let best = Infinity;
+  for (const r of runs()) {
+    if (r.date > end || r.date <= start || r.distKm < 3 || !r.timeSec) continue;
+    const p = riegel(r.timeSec, r.distKm);
+    if (p < best) best = p;
+  }
+  if (isFinite(best)) return best;
+  // Nothing in 6 weeks: use the best run from the last ~4 months, slowed 1% per week of rust
+  const old = ymd(addDays(asOf,-120));
+  for (const r of runs()) {
+    if (r.date > end || r.date <= old || r.distKm < 3 || !r.timeSec) continue;
+    const wks = daysBetween(parseYMD(r.date), asOf)/7;
+    const p = riegel(r.timeSec, r.distKm) * (1 + 0.01*Math.max(0, wks-6));
+    if (p < best) best = p;
+  }
+  return isFinite(best) ? best : null;
+}
+function bestHalf(){ // fastest actual half marathon in the history
+  return runs().filter(r => r.distKm >= 20.9 && r.distKm <= 22.5 && r.timeSec).sort((a,b) => a.timeSec - b.timeSec)[0] || null;
+}
+function baselineHM(){
+  const t = parseTime(state.settings.base5k);
+  return isFinite(t) && t > 0 ? riegel(t, 5) : null;
+}
+function fitnessAt(d){ return predictHM(d) ?? baselineHM() ?? 3.5*3600; }
+function longestRecent(asOf){
+  const end = ymd(asOf), start = ymd(addDays(asOf,-42));
+  return Math.max(0, ...runs().filter(r => r.date <= end && r.date > start).map(r => r.distKm));
+}
+function effectiveMaxHR(){
+  const s = +state.settings.maxHR; if (s > 100) return s;
+  // 3rd-highest recorded max, so one wrist-sensor spike doesn't inflate it
+  const m = state.activities.map(a => a.maxHR||0).filter(h => h > 120 && h < 230).sort((a,b) => b-a)[2];
+  return m || null;
+}
+
+/* ============================== heart-rate zones (Garmin % of LTHR) ============================== */
+const ZONE_PCT = [0.66, 0.83, 0.92, 0.96, 1.03]; // lower bound of Z1..Z5, same as Garmin's LTHR zones
+function lthr(){ const v = +state.settings.lthr; return v > 120 && v < 230 ? v : null; }
+function zones(){
+  const L = lthr(); if (!L) return null;
+  return ZONE_PCT.map((p,i) => ({ z: i+1, lo: Math.round(L*p), hi: i < 4 ? Math.round(L*ZONE_PCT[i+1]) - 1 : null }));
+}
+function zoneOf(hr){ const Z = zones(); if (!Z || !hr) return null; let z = 0; for (const x of Z) if (hr >= x.lo) z = x.z; return z; }
+// Easy ceiling: 89% of LTHR (mid/upper Zone 2) while rebuilding; fall back to 78% of max HR.
+function easyCap(){ const L = lthr(); if (L) return Math.round(L*0.89); const m = effectiveMaxHR(); return m ? Math.round(m*0.78) : null; }
+function hrTarget(kind, D = HM_KM){
+  const L = lthr(), cap = easyCap();
+  if (!cap) return '';
+  const r = p => Math.round(L*p);
+  const t = {
+    easy:  ` ❤️ HR under ${cap}${L ? ' (Zone 2)' : ''} – walk to bring it down.`,
+    tempo: L ? ` ❤️ HR ${r(0.92)}–${r(0.98)} (Zone 3 to low Zone 4).` : '',
+    goal:  L ? ` ❤️ Expect ${r(0.92)}–${r(0.97)}; if you're over ${r(1.0)} before the last rep, slow down.` : '',
+    race:  !L ? '' : D > 30 ? ` ❤️ Keep HR under ${r(0.92)} (Zone 2) until 30 km.` : D > 15 ? ` ❤️ Keep HR under ${r(0.96)} (Zone 3) for the first 10 km, then race it.` : ` ❤️ Settle around ${r(0.97)}–${r(1.01)} and hold it; empty the tank in the last km.`,
+  };
+  return t[kind] || '';
+}
+
+/* ============================== weight ============================== */
+const LB = 0.45359237;
+function parseWeight(str){ // kg: "92.4" · lb: "203" · st: "14 7", "14st 7lb", "14.5"
+  const n = String(str).match(/[\d.]+/g)?.map(Number) || [];
+  if (!n.length) return NaN;
+  const u = state.settings.wUnit;
+  if (u === 'lb') return n[0]*LB;
+  if (u === 'st') return n.length > 1 ? (n[0]*14 + n[1])*LB : n[0]*14*LB;
+  return n[0];
+}
+function fmtWeight(kg){
+  if (!isFinite(kg)) return '–';
+  const u = state.settings.wUnit;
+  if (u === 'lb') return Math.round(kg/LB) + ' lb';
+  if (u === 'st'){ const lb = Math.round(kg/LB); return Math.floor(lb/14) + ' st ' + (lb%14) + ' lb'; }
+  return kg.toFixed(1) + ' kg';
+}
+const weights = () => (state.weights||[]).slice().sort((a,b) => a.date < b.date ? -1 : 1);
+function logWeight(){
+  const kg = parseWeight(document.getElementById('wIn').value), date = document.getElementById('wDate').value || ymd(today());
+  if (!(kg > 30 && kg < 300)) return toast("That weight doesn't look right");
+  state.weights = (state.weights||[]).filter(w => w.date !== date).concat({ date, kg: Math.round(kg*10)/10 });
+  save(); render(); toast('Weight logged');
+}
+function weightCard(){
+  const W = weights(), first = W[0], last = W[W.length-1], target = +state.settings.targetKg || null;
+  const unitHint = { kg: 'e.g. 92.4', lb: 'e.g. 203', st: 'e.g. 14 7 (st lb)' }[state.settings.wUnit];
+  const dshort = d => parseYMD(d).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  let body = '';
+  if (last){
+    const lost = first.kg - last.kg, toGo = target ? last.kg - target : null;
+    const pct = target && first.kg > target ? Math.max(0, Math.min(100, lost/(first.kg - target)*100)) : 0;
+    const weeksLeft = Math.max(0, daysBetween(today(), parseYMD(raceDateStr()))/7);
+    const raceKg = target ? Math.max(target, last.kg - 0.5*weeksLeft) : null; // at a safe ~0.5 kg/week
+    const worth = target ? Math.max(0, Math.round(first.kg - raceKg)) : 0;  // rule of thumb: ~1 min per kg over a half
+    body = `<div class="grid">
+      <div class="stat"><div class="k">Now</div><div class="v">${fmtWeight(last.kg)}</div><div class="n">${dshort(last.date)}</div></div>
+      <div class="stat"><div class="k">Change</div><div class="v">${lost > 0.05 ? '−' : lost < -0.05 ? '+' : ''}${fmtWeight(Math.abs(lost)).replace(/^0 st /,'')}</div><div class="n">since ${dshort(first.date)}</div></div>
+      ${target ? `<div class="stat"><div class="k">Target</div><div class="v">${fmtWeight(target)}</div><div class="n">${toGo > 0 ? fmtWeight(toGo).replace(/^0 st /,'') + ' to go' : 'reached 🎉'}</div></div>
+      <div class="stat"><div class="k">Worth on race day</div><div class="v">≈${worth} min</div><div class="n">rough guide: ~1 min per kg</div></div>` : ''}
+    </div>
+    ${target ? `<div class="bar" style="margin-top:10px"><i style="width:${pct}%"></i></div>
+    <div class="small muted" style="margin-top:6px">At a safe 0.5 kg a week you'd be about <b>${fmtWeight(raceKg)}</b> by race day. Don't go faster than that – under-fuelling while training gets you injured.</div>` : ''}`;
+  }
+  return `<div class="card"><h2>⚖️ Weight</h2>${body}
+    <div class="row" style="margin-top:${last ? 12 : 0}px">
+      <div><label>Date</label><input type="date" id="wDate" value="${ymd(today())}"></div>
+      <div><label>Weight (${state.settings.wUnit === 'st' ? 'st lb' : state.settings.wUnit})</label><input id="wIn" inputmode="decimal" placeholder="${unitHint}"></div>
+    </div>
+    <p style="margin-bottom:0"><button class="btn" onclick="logWeight()">Log weight</button> <span class="small muted">Once a week, same morning, before breakfast.${!target ? ` Set a target weight in <a href="#" onclick="go('settings');return false">Settings</a>.` : ''}</span></p></div>`;
+}
+function weightChart(){
+  const W = weights(); if (W.length < 2) return '';
+  const target = +state.settings.targetKg || null;
+  const x0 = parseYMD(W[0].date), span = Math.max(1, daysBetween(x0, parseYMD(raceDateStr())));
+  const vals = W.map(w => w.kg).concat(target ? [target] : []);
+  const lo = Math.min(...vals) - 1, hi = Math.max(...vals) + 1;
+  const Wd = 820, H = 180, pl = 44, pb = 22;
+  const X = d => pl + daysBetween(x0, parseYMD(d))/span*(Wd-pl-10), Y = v => 8 + (hi - v)/(hi - lo)*(H-pb-8);
+  let g = '';
+  for (let i = 0; i <= 4; i++){ const v = lo + (hi-lo)*i/4; g += `<line x1="${pl}" x2="${Wd}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"/><text x="${pl-6}" y="${Y(v)+4}" text-anchor="end">${state.settings.wUnit==='kg' ? v.toFixed(0) : Math.round(v/LB)}</text>`; }
+  if (target){
+    g += `<line x1="${pl}" x2="${Wd}" y1="${Y(target)}" y2="${Y(target)}" stroke="var(--race)" stroke-dasharray="5 3"/><text x="${Wd-4}" y="${Y(target)-5}" text-anchor="end" style="fill:var(--race)">target</text>`;
+    const safeEnd = Math.max(target, W[0].kg - 0.5*span/7);
+    g += `<line x1="${X(W[0].date)}" y1="${Y(W[0].kg)}" x2="${X(raceDateStr())}" y2="${Y(safeEnd)}" stroke="var(--muted)" stroke-dasharray="2 4"/>`;
+  }
+  g += `<polyline fill="none" stroke="var(--gym)" stroke-width="2.5" points="${W.map(w => X(w.date)+','+Y(w.kg)).join(' ')}"/>` + W.map(w => `<circle cx="${X(w.date)}" cy="${Y(w.kg)}" r="3.5" fill="var(--gym)"><title>${w.date}: ${fmtWeight(w.kg)}</title></circle>`).join('');
+  g += `<text x="${pl}" y="${H-6}">${x0.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</text><text x="${Wd-4}" y="${H-6}" text-anchor="end">race day</text>`;
+  return `<div class="card"><h2>Weight (${state.settings.wUnit === 'kg' ? 'kg' : 'lb'})</h2><div class="small muted">Grey dotted line = a safe 0.5 kg/week path.</div><svg viewBox="0 0 ${Wd} ${H}" width="100%" role="img" aria-label="Weight chart">${g}</svg></div>`;
+}
+
+let progTab = (() => { try { return localStorage.getItem('workit-progtab') || 'run'; } catch(e){ return 'run'; } })();
+function setProgTab(t){ progTab = t; try { localStorage.setItem('workit-progtab', t); } catch(e){} renderProgress(); }
+function progressTabs(){
+  return `<div class="seg"><button class="${progTab==='run'?'on':''}" onclick="setProgTab('run')">🏃 Running</button><button class="${progTab==='weight'?'on':''}" onclick="setProgTab('weight')">⚖️ Weight</button></div>`;
+}
+const wConv = kg => state.settings.wUnit === 'kg' ? kg : kg/LB;      // number in chart units
+const wAxisUnit = () => state.settings.wUnit === 'kg' ? 'kg' : 'lb';
+function deleteWeight(date){ if (!confirm('Delete the weigh-in on ' + date + '?')) return; state.weights = (state.weights||[]).filter(w => w.date !== date); save(); render(); }
+
+function weeklyWeights(){ // last weigh-in of each week
+  const m = new Map();
+  for (const w of weights()) m.set(ymd(mondayOf(parseYMD(w.date))), w);
+  return [...m.entries()].map(([mon, w]) => ({ mon, kg: w.kg, date: w.date }));
+}
+function weeklyChangeChart(){
+  const WW = weeklyWeights(); if (WW.length < 2) return '';
+  const ch = WW.slice(1).map((w,i) => ({ mon: w.mon, d: wConv(w.kg) - wConv(WW[i].kg) }));
+  const safe = wConv(0.5) * (state.settings.wUnit === 'kg' ? 1 : 1); // 0.5 kg in chart units
+  const max = Math.max(safe*1.6, ...ch.map(c => Math.abs(c.d))) ;
+  const Wd = 820, H = 170, pl = 44, pb = 22, n = ch.length, bw = Math.min(70, (Wd-pl)/n);
+  const Y = v => 8 + (max - v)/(2*max)*(H-pb-8);
+  let g = `<line x1="${pl}" x2="${Wd}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--muted)"/>`;
+  g += `<line x1="${pl}" x2="${Wd}" y1="${Y(-safe)}" y2="${Y(-safe)}" stroke="var(--good)" stroke-dasharray="5 3"/><text x="${Wd-4}" y="${Y(-safe)+14}" text-anchor="end" style="fill:var(--good)">−0.5 kg/week (safe max)</text>`;
+  for (const v of [max, max/2, -max/2, -max]) g += `<text x="${pl-6}" y="${Y(v)+4}" text-anchor="end">${v>0?'+':''}${v.toFixed(1)}</text>`;
+  ch.forEach((c,i) => {
+    const x = pl + i*bw + 6, y0 = Y(0), y1 = Y(c.d);
+    const col = c.d < -safe*1.6 ? 'var(--warn)' : c.d <= 0 ? 'var(--good)' : 'var(--race)';
+    g += `<rect x="${x}" y="${Math.min(y0,y1)}" width="${bw-12}" height="${Math.max(1.5, Math.abs(y1-y0))}" fill="${col}" rx="3"><title>Week of ${c.mon}: ${c.d>0?'+':''}${c.d.toFixed(1)} ${wAxisUnit()}</title></rect>`;
+    g += `<text x="${x + (bw-12)/2}" y="${H-6}" text-anchor="middle">${parseYMD(c.mon).getDate()}/${parseYMD(c.mon).getMonth()+1}</text>`;
+  });
+  return `<div class="card"><h2>Weekly change (${wAxisUnit()})</h2><div class="small muted">Green = steady loss · orange = dropping too fast · red = gain</div><svg viewBox="0 0 ${Wd} ${H}" width="100%" role="img" aria-label="Weekly weight change chart">${g}</svg></div>`;
+}
+function weightVsFitnessChart(){
+  const WW = weeklyWeights(); if (WW.length < 2) return '';
+  const pts = WW.map(w => { const sun = addDays(parseYMD(w.mon), 6), h = predictHM(sun < today() ? sun : today()); return { ...w, hm: h ? toRace(h, PLAN?.D || HM_KM) : null }; });
+  const hmPts = pts.filter(p => p.hm);
+  const Wd = 820, H = 190, pl = 44, pr = 50, pb = 22, n = pts.length;
+  const X = i => pl + (n === 1 ? 0 : i/(n-1)) * (Wd-pl-pr);
+  const wv = pts.map(p => wConv(p.kg)), wlo = Math.min(...wv) - 1, whi = Math.max(...wv) + 1;
+  const Yw = v => 10 + (whi - v)/(whi - wlo)*(H-pb-20);
+  let g = '';
+  for (let i = 0; i <= 3; i++){ const v = wlo + (whi-wlo)*i/3; g += `<line x1="${pl}" x2="${Wd-pr}" y1="${Yw(v)}" y2="${Yw(v)}" stroke="var(--line)"/><text x="${pl-6}" y="${Yw(v)+4}" text-anchor="end" style="fill:var(--gym)">${v.toFixed(0)}</text>`; }
+  g += `<polyline fill="none" stroke="var(--gym)" stroke-width="2.5" points="${pts.map((p,i) => X(i)+','+Yw(wConv(p.kg))).join(' ')}"/>`;
+  if (hmPts.length){
+    const hv = hmPts.map(p => p.hm), hlo = Math.min(...hv) - 120, hhi = Math.max(...hv) + 120;
+    const Yh = v => 10 + (v - hlo)/(hhi - hlo)*(H-pb-20); // faster = higher
+    for (let i = 0; i <= 3; i++){ const v = hlo + (hhi-hlo)*i/3; g += `<text x="${Wd-pr+6}" y="${Yh(v)+4}" style="fill:var(--accent)">${fmtTime(v).slice(0,-3)}</text>`; }
+    g += `<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 3" points="${pts.map((p,i) => p.hm ? X(i)+','+Yh(p.hm) : null).filter(Boolean).join(' ')}"/>`;
+    g += hmPts.map(p => `<circle cx="${X(pts.indexOf(p))}" cy="${Yh(p.hm)}" r="3.5" fill="var(--accent)"><title>Week of ${p.mon}: predicted ${fmtTime(p.hm)}</title></circle>`).join('');
+  }
+  g += pts.map((p,i) => `<circle cx="${X(i)}" cy="${Yw(wConv(p.kg))}" r="3.5" fill="var(--gym)"><title>Week of ${p.mon}: ${fmtWeight(p.kg)}</title></circle>`).join('');
+  g += `<text x="${pl}" y="${H-6}">${parseYMD(pts[0].mon).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</text><text x="${Wd-pr}" y="${H-6}" text-anchor="end">${parseYMD(pts[n-1].mon).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</text>`;
+  return `<div class="card"><h2>Weight vs running fitness</h2>
+    <div class="small muted"><span style="color:var(--gym);font-weight:700">━ weight (${wAxisUnit()}, left)</span> &nbsp; <span style="color:var(--accent);font-weight:700">┅ predicted ${distShort(PLAN?.D || HM_KM)} time (right, higher = faster)</span></div>
+    <svg viewBox="0 0 ${Wd} ${H}" width="100%" role="img" aria-label="Weight versus predicted race time">${g}</svg>
+    ${hmPts.length ? '' : '<p class="small muted">No runs in these weeks yet, so there is no fitness line to compare.</p>'}</div>`;
+}
+function weightHistory(){
+  const W = weights().reverse(); if (!W.length) return '';
+  return `<div class="card"><h2>Weigh-ins</h2><div class="tablewrap"><table><tr><th>Date</th><th class="num">Weight</th><th class="num">Change</th><th></th></tr>
+    ${W.map((w,i) => { const prev = W[i+1]; const d = prev ? w.kg - prev.kg : null;
+      return `<tr><td>${parseYMD(w.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})}</td><td class="num">${fmtWeight(w.kg)}</td>
+      <td class="num" style="color:${d==null?'inherit':d<=0?'var(--good)':'var(--race)'}">${d==null ? '' : (d>0?'+':'−') + fmtWeight(Math.abs(d)).replace(/^0 st /,'')}</td>
+      <td class="num"><button class="wdel" title="Delete" onclick="deleteWeight('${w.date}')">×</button></td></tr>`; }).join('')}
+  </table></div></div>`;
+}
+function weightPage(){
+  const n = weights().length;
+  return weightCard()
+    + (n >= 2 ? weightChart() + weeklyChangeChart() + weightVsFitnessChart()
+              : `<div class="card small muted">Charts appear once you've logged ${n ? 'one more weigh-in' : 'two weigh-ins'}. Weekly is plenty.</div>`)
+    + weightHistory();
+}
+
+/* ============================== races ============================== */
+const DISTANCES = [[5,'5K'],[10,'10K'],[HM_KM,'Half marathon'],[42.195,'Marathon']];
+const distLabel = d => (DISTANCES.find(([k]) => Math.abs(k - d) < 0.05) || [0, (+d).toFixed(1) + ' km'])[1];
+const distShort = d => ({ 'Half marathon': 'half', 'Marathon': 'marathon' })[distLabel(d)] || distLabel(d);
+const toRace = (hmSec, D) => riegel(hmSec, HM_KM, D);
+const races = () => (state.races||[]).slice().sort((a,b) => a.date < b.date ? -1 : 1);
+function targetRace(){
+  const t = ymd(today()), R = races().filter(r => r.date >= t);
+  return R.find(r => r.id === state.settings.targetRaceId) || R[0] || null;
+}
+const raceDateStr = () => targetRace()?.date || ymd(addDays(today(), 112));
+function raceResult(r){ return runs().filter(x => x.date === r.date && x.distKm >= r.distKm*0.9).sort((a,b) => b.distKm - a.distKm)[0] || null; }
+function bestAt(D){ return runs().filter(r => r.distKm >= D*0.99 && r.distKm <= D*1.07 && r.timeSec).sort((a,b) => a.timeSec - b.timeSec)[0] || null; }
+
+let editRaceId = null;
+function renderRaces(){
+  const t = ymd(today()), tgt = targetRace(), R = races();
+  const up = R.filter(r => r.date >= t), past = R.filter(r => r.date < t).reverse();
+  const when = r => parseYMD(r.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const item = r => {
+    const isT = tgt && tgt.id === r.id, g = parseTime(r.goal), res = r.date < t ? raceResult(r) : null;
+    const days = daysBetween(today(), parseYMD(r.date));
+    return `<div class="sess"><div class="body">
+      <div class="t">${isT ? '<span class="pill p-race">Target</span> ' : ''}${esc(r.name)} <span class="small muted">· ${distLabel(r.distKm)}</span></div>
+      <div class="d">${when(r)}${r.start ? ' · ' + esc(r.start) + ' start' : ''}${r.location ? ' · ' + esc(r.location) : ''}${r.date >= t ? ` · <b>${days} days to go</b>` : ''}</div>
+      <div class="d">Goal <b>${esc(r.goal) || '–'}</b>${isFinite(g) ? ` (${fmtPace(g/r.distKm)})` : ''}${res ? ` · Result <b>${fmtTime(res.timeSec)}</b> ${isFinite(g) ? (res.timeSec <= g ? `<span class="pill p-good">beat goal by ${fmtTime(g - res.timeSec)}</span>` : `<span class="pill p-warn">${fmtTime(res.timeSec - g)} over goal</span>`) : ''}` : ''}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        ${r.date >= t && !isT ? `<button class="btn ghost" onclick="makeTarget('${r.id}')">Make target race</button>` : ''}
+        <button class="btn ghost" onclick="editRace('${r.id}')">Edit</button>
+        <button class="btn danger" onclick="deleteRace('${r.id}')">Delete</button>
+      </div></div></div>`;
+  };
+  const e = editRaceId ? (state.races||[]).find(r => r.id === editRaceId) : null;
+  const dv = e ? (DISTANCES.find(([k]) => Math.abs(k - e.distKm) < 0.05)?.[0] ?? 'other') : HM_KM;
+  document.getElementById('tab-races').innerHTML = `
+  <div class="card"><h2>Upcoming races</h2>${up.length ? up.map(item).join('') : '<p class="muted" style="margin:0">No races yet – add one below and your plan builds itself around it.</p>'}
+    ${up.length > 1 ? '<p class="small muted" style="margin-bottom:0">Your plan builds towards the <b>target</b> race. Other races in the plan show up as tune-up races on their day.</p>' : ''}</div>
+  <div class="card" id="raceForm"><h2>${e ? 'Edit race' : 'Add a race'}</h2>
+    <div class="row">
+      <div><label>Race name</label><input id="rName" value="${esc(e?.name || '')}" placeholder="e.g. Spring Half Marathon"></div>
+      <div><label>Date</label><input type="date" id="rDate" value="${e?.date || ''}"></div>
+      <div><label>Start time</label><input type="time" id="rStart" value="${esc(e?.start || '')}"></div>
+    </div>
+    <div class="row">
+      <div><label>Distance</label><select id="rDist" onchange="document.getElementById('rOtherWrap').classList.toggle('hidden', this.value !== 'other')">
+        ${DISTANCES.map(([k,l]) => `<option value="${k}" ${dv === k ? 'selected' : ''}>${l}</option>`).join('')}<option value="other" ${dv === 'other' ? 'selected' : ''}>Other…</option></select></div>
+      <div id="rOtherWrap" class="${dv === 'other' ? '' : 'hidden'}"><label>Distance (km)</label><input id="rOther" inputmode="decimal" value="${dv === 'other' ? e.distKm : ''}"></div>
+      <div><label>Target time</label><input id="rGoal" value="${esc(e?.goal || '')}" placeholder="h:mm:ss"></div>
+      <div><label>Location (optional)</label><input id="rLoc" value="${esc(e?.location || '')}"></div>
+    </div>
+    <p style="margin-bottom:0"><button class="btn" onclick="saveRace()">${e ? 'Save changes' : 'Add race'}</button>
+    ${e ? '<button class="btn ghost" onclick="editRaceId=null;renderRaces()">Cancel</button>' : ''}</p></div>
+  ${past.length ? `<div class="card"><h2>Past races</h2>${past.map(item).join('')}</div>` : ''}`;
+}
+function saveRace(){
+  const v = id => document.getElementById(id).value.trim();
+  const name = v('rName'), date = v('rDate'), goal = v('rGoal');
+  const distKm = v('rDist') === 'other' ? parseFloat(v('rOther')) : +v('rDist');
+  if (!name) return toast('Give the race a name');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return toast('Pick the race date');
+  if (!(distKm > 0.5 && distKm < 200)) return toast('Check the distance');
+  if (!(parseTime(goal) > 60)) return toast('Target time should look like 2:30:00 or 55:00');
+  const r = { id: editRaceId || 'r' + Date.now().toString(36), name, date, start: v('rStart'), location: v('rLoc'), distKm, goal };
+  state.races = (state.races||[]).filter(x => x.id !== r.id).concat(r);
+  if (!targetRace() || !state.settings.targetRaceId || !(state.races.some(x => x.id === state.settings.targetRaceId))) state.settings.targetRaceId = r.id;
+  editRaceId = null; save(); render(); toast('Race saved – plan updated');
+}
+function editRace(id){ editRaceId = id; renderRaces(); document.getElementById('raceForm').scrollIntoView({ behavior: 'smooth' }); }
+function deleteRace(id){
+  const r = (state.races||[]).find(x => x.id === id);
+  if (!r || !confirm(`Delete ${r.name}?`)) return;
+  state.races = state.races.filter(x => x.id !== id);
+  if (state.settings.targetRaceId === id) state.settings.targetRaceId = '';
+  save(); render();
+}
+function makeTarget(id){ state.settings.targetRaceId = id; save(); render(); toast('Plan now builds towards this race'); }
+
+/* ============================== plan generator ============================== */
+const RW = [[1,1],[2,1],[3,1],[4,1],[5,1],[6,1],[8,1],[10,1]];
+
+function buildPlan(){
+  const s = state.settings;
+  const R0 = targetRace(); if (!R0) return null;
+  const D = R0.distKm;
+  const race = parseYMD(R0.date), start = mondayOf(parseYMD(s.planStart));
+  const raceMon = mondayOf(race), raceDow = (race.getDay()+6)%7;
+  const n = Math.max(1, daysBetween(start, raceMon)/7 + 1);
+  const startFit = fitnessAt(addDays(start,-1));
+  const nowFit = fitnessAt(today());
+  const goalT = parseTime(R0.goal) || toRace(nowFit, D), goalPace = goalT/D, goalHM = riegel(goalT, D, HM_KM);
+  const Lpeak = D <= 5.5 ? 8 : D <= 10.5 ? 12 : D <= 21.5 ? 18 : 30;
+  const L0 = Math.min(10, Lpeak*0.6, Math.max(3, longestRecent(addDays(start,-1))));
+  const peakIdx = Math.max(0, n-3);
+  const weeks = [];
+
+  for (let w = 0; w < n; w++){
+    const mon = addDays(start, w*7), toGo = n - w;
+    const phase = toGo===1 ? 'Race week' : toGo===2 ? 'Taper' : toGo<=5 ? 'Peak' : (w < (n-5)*0.5 ? 'Base' : 'Build');
+    const cutback = (w+1)%4===0 && toGo>3;
+    // paces from fitness known at that week (past/current) or today's fitness (future)
+    const fit = mon > today() ? nowFit : fitnessAt(addDays(mon,6) < today() ? addDays(mon,6) : today());
+    const hmPace = fit/HM_KM;
+    const easy = hmPace*1.10, tempo = Math.max(goalPace*0.96, hmPace*0.95);
+    const runWalk = nowFit > 10500 && (phase==='Base' || phase==='Build');
+    const rwStart = nowFit > 12600 ? 0 : nowFit > 11700 ? 2 : 4; // fitter → longer run segments
+    const rw = RW[Math.min(rwStart + w, RW.length-1)];
+    const rwTxt = runWalk ? ` Run/walk: ${rw[0]} min run / ${rw[1]} min walk, repeat.` : '';
+
+    let long = peakIdx===0 ? Lpeak : L0 + (Lpeak - L0) * Math.min(1, w/peakIdx);
+    if (cutback) long *= 0.75;
+    if (toGo===2) long = Math.round(Lpeak*0.6);
+    long = Math.round(long*2)/2;
+    const easyD = Math.max(3, Math.min(8, Math.round(long*0.5*2)/2));
+    const recD = Math.max(2.5, Math.round(long*0.35*2)/2);
+
+    const S = []; // sessions
+    const add = (dow, kind, title, detail, distKm=null, pace=null) => {
+      const date = ymd(addDays(mon, dow));
+      S.push({ id: `${date}-${kind}-${S.length}`, date, dow, kind, title, detail, distKm, pace });
+    };
+
+    if (toGo===1){
+      if (raceDow >= 3) add(1,'run','Shake-out + race pace', `3 km easy (${fmtPace(easy)}) with 3 × 1 min at goal pace ${fmtPace(goalPace)}.${hrTarget("easy")}`, 3, easy);
+      if (raceDow >= 4) add(3,'run','Easy jog', `3 km very easy. Lay out kit, pin your number.`, 3, easy);
+      const [hh, mm] = (R0.start || '').split(':').map(Number);
+      const where = [R0.start ? `${R0.start} start` : '', R0.location ? esc(R0.location) : ''].filter(Boolean).join(', ');
+      const bfast = isFinite(hh) && hh >= 7 ? ` Breakfast by ${hh-3}:${pad(mm||0)}.` : '';
+      add(raceDow,'race',`RACE DAY – ${R0.name} 🏁`, `${where ? where + '.' : ''}${bfast} Goal ${esc(R0.goal)} = ${fmtPace(goalPace)}. Start 10–15 s/km slower for the first ${D > 15 ? '3 km' : 'km'}, settle in, push the last ${D > 15 ? '5 km' : 'quarter'}.${hrTarget("race", D)}`, D, goalPace);
+    } else {
+      // quality session (Tue)
+      let q;
+      if (phase==='Base'){
+        q = ['Easy + strides', `${fmtDist(easyD)} easy at ~${fmtPace(easy)}.${rwTxt}${w>=3 && !runWalk ? ' Finish with 4–6 × 20 s relaxed fast strides.' : ''}${hrTarget("easy")}`, easyD, easy];
+      } else if (phase==='Build'){
+        const buildW = Math.max(1, (n-5) - Math.ceil((n-5)*0.5));
+        const k = Math.min(1, (w - Math.ceil((n-5)*0.5)) / buildW);
+        const T = Math.round((1.5 + 2.5*k)*2)/2 * (cutback?0.7:1);
+        q = ['Tempo run', `1 km warm-up easy, ${fmtDist(T)} steady-hard at ${fmtPace(tempo)} ("comfortably hard", can speak in short phrases), 1 km cool-down.${hrTarget("tempo")}`, T+2, tempo];
+      } else if (phase==='Peak'){
+        const reps = toGo===5 ? '3 × 2 km' : toGo===4 ? '2 × 3 km' : '5 km continuous';
+        const d = toGo===3 ? 5 : 6;
+        q = ['Goal-pace session', `1.5 km warm-up, ${reps} at goal pace ${fmtPace(goalPace)} (2 min walk/jog between reps), 1 km cool-down.${hrTarget("goal")}`, d+2.5, goalPace];
+      } else { // taper
+        q = ['Sharpener', `1 km warm-up, 2 × 1.5 km at goal pace ${fmtPace(goalPace)} with 2 min easy between, 1 km cool-down.${hrTarget("goal")}`, 5, goalPace];
+      }
+      add(1,'run',q[0],q[1],q[2],q[3]);
+      add(3,'run','Easy run', `${fmtDist(easyD)} easy at ~${fmtPace(easy)} – conversational.${rwTxt}${hrTarget("easy")} Heart rate beats pace: if it says slow down, slow down.`, easyD, easy);
+      if (+s.runDays >= 4) add(5,'run','Recovery jog', `${fmtDist(recD)} very easy. Slower than you think.${runWalk ? rwTxt : ''}${hrTarget("easy")}`, recD, easy*1.05);
+      const lpTxt = (toGo===3||toGo===4) ? ` Run the last 3 km at goal pace ${fmtPace(goalPace)}.` : '';
+      add(6,'run', cutback ? 'Long run (cut-back week)' : 'Long run', `${fmtDist(long)} at ~${fmtPace(easy*1.03)} – slow is fine, time on feet is the goal.${runWalk ? rwTxt : ''}${hrTarget("easy")}${lpTxt}`, long, easy*1.03);
+      // gym
+      if (toGo===2){
+        add(0,'gym','Gym A (light)','Gym A, 2 rounds only, lighter weights. Keep the legs fresh.');
+      } else if (+s.gymDays >= 2){
+        add(0,'gym','Gym A – 10 min legs','3 rounds, ~10 min. See the Gym tab. Got time? Add 10 min easy bike.');
+        add(4,'gym','Gym B – 10 min hips & core','3 rounds, ~10 min. See the Gym tab. Got time? Add 10 min easy bike.');
+      } else if (+s.gymDays === 1){
+        add(4,'gym', w%2 ? 'Gym B – 10 min hips & core' : 'Gym A – 10 min legs','3 rounds, ~10 min. See the Gym tab.');
+      }
+    }
+    // Wednesday is always a rest day (office + house group); cardio is purely optional
+    if (!(toGo===1 && raceDow <= 2)) add(2,'xt','Rest day · house group', toGo <= 2 ? 'Rest. Optional: 15 min very easy spin if you fancy it.' : 'Rest is the default. Optional: 20–30 min easy bike, cross-trainer or rower in Zone 2 if you get the chance.');
+    S.sort((a,b)=>a.dow-b.dow);
+    const plannedKm = S.filter(x=>x.kind!=='gym'&&x.kind!=='xt').reduce((a,x)=>a+(x.distKm||0),0);
+    weeks.push({ w, mon, toGo, phase, cutback, sessions: S, plannedKm });
+  }
+  // Other races inside the plan become tune-up races on their day
+  for (const r of races()){
+    if (r.id === R0.id) continue;
+    const wk = weeks.find(w => r.date >= ymd(w.mon) && r.date < ymd(addDays(w.mon,7))); if (!wk) continue;
+    const dow = (parseYMD(r.date).getDay()+6)%7, gp = parseTime(r.goal)/r.distKm;
+    wk.sessions = wk.sessions.filter(x => x.dow !== dow);
+    wk.sessions.push({ id: `${r.date}-race-${r.id}`, date: r.date, dow, kind: 'race', title: `Race: ${r.name} (${distLabel(r.distKm)})`,
+      detail: `Tune-up race${r.start ? ', ' + esc(r.start) + ' start' : ''}.${isFinite(gp) ? ` Goal ${esc(r.goal)} (${fmtPace(gp)}).` : ''} Counts as this week's hard session – keep the next day easy.`, distKm: r.distKm, pace: isFinite(gp) ? gp : null });
+    wk.sessions.sort((a,b) => a.dow - b.dow);
+    wk.plannedKm = wk.sessions.filter(x => x.kind!=='gym' && x.kind!=='xt').reduce((a,x) => a + (x.distKm||0), 0);
+  }
+  return { weeks, n, goalT, goalHM, goalPace, startFit, nowFit, race: R0, D };
+}
+
+/* auto-complete: an imported activity on the same day counts */
+function isDone(sess){
+  if (state.done[sess.id] !== undefined) return state.done[sess.id];
+  const acts = state.activities.filter(a => a.date === sess.date);
+  if (sess.kind==='run' || sess.kind==='race') return acts.some(a => a.isRun && a.distKm >= (sess.distKm||0)*0.6);
+  if (sess.kind==='gym') return acts.some(a => /strength|weight|gym/i.test(a.type));
+  if (sess.kind==='xt') return acts.some(a => /cycl|bike|ride|ellip|cross|row|stair/i.test(a.type));
+  return false;
+}
+function toggleDone(id, cur){ state.done[id] = !cur; save(); render(); }
+
+/* ============================== rendering ============================== */
+let PLAN;
+function render(){
+  PLAN = buildPlan();
+  const R0 = PLAN?.race;
+  document.getElementById('hdrSub').textContent = R0
+    ? `${R0.name} · ${parseYMD(R0.date).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short',year:'numeric'})} · ${daysBetween(today(), parseYMD(R0.date))} days to go · goal ${R0.goal}`
+    : 'Add a race to build your plan';
+  renderToday(); renderPlan(); renderRaces(); renderProgress(); renderGym(); renderImport(); renderSettings();
+}
+
+function sessRow(x){
+  const done = isDone(x), t = ymd(today());
+  const pill = {run:'<span class="pill p-run">Run</span>', gym:'<span class="pill p-gym">Gym</span>', xt:'<span class="pill p-xt">Optional</span>', race:'<span class="pill p-race">Race</span>'}[x.kind];
+  const d = parseYMD(x.date);
+  const act = state.activities.filter(a => a.date===x.date && (x.kind==='run'||x.kind==='race' ? a.isRun : !a.isRun));
+  const actTxt = act.length ? `<div class="small" style="color:var(--good)">✓ Garmin: ${act.map(a => a.isRun ? `${fmtDist(a.distKm)} in ${fmtTime(a.timeSec)} (${fmtPace(a.timeSec/a.distKm)})${a.avgHR?' · '+a.avgHR+' bpm':''}` : esc(a.type)).join('; ')}</div>` : '';
+  return `<div class="sess ${x.date===t?'today':''} ${x.date<t?'past':''} ${done?'done':''}">
+    <div class="day">${DOW[x.dow]}<b>${d.getDate()}</b></div>
+    <div class="body"><div class="t">${pill} ${esc(x.title)}</div><div class="d">${x.detail}</div>${actTxt}</div>
+    <button class="chk ${done?'on':''}" title="Mark done" onclick="toggleDone('${x.id}',${done})">${done?'✓':''}</button>
+  </div>`;
+}
+
+function renderToday(){
+  const P = PLAN, s = state.settings, t = today();
+  if (!P){
+    document.getElementById('tab-today').innerHTML = `<div class="card note">👋 <b>Start here:</b> add your race on the <a href="#" onclick="go('races');return false">Races</a> tab – name, date and target time – and your plan builds itself.${runs().length ? '' : ` Then import your runs on the <a href="#" onclick="go('import');return false">Garmin import</a> tab.`}</div>`;
+    return;
+  }
+  const wk = P.weeks.find(w => t >= w.mon && t < addDays(w.mon,7)) || (t < P.weeks[0].mon ? P.weeks[0] : null);
+  const predR = toRace(P.nowFit, P.D), gap = predR - P.goalT, best = bestAt(P.D);
+  const prog = Math.max(0, Math.min(100, (P.startFit - P.nowFit) / Math.max(1, P.startFit - P.goalHM) * 100));
+  const hasData = runs().length > 0;
+  const mhr = effectiveMaxHR();
+  const thisWeekKm = runs().filter(r => wk && r.date >= ymd(wk.mon) && r.date < ymd(addDays(wk.mon,7))).reduce((a,r)=>a+r.distKm,0);
+  let html = '';
+  if (!hasData && !state.settings.base5k){
+    html += `<div class="card note">👋 <b>Start here:</b> import your Garmin runs on the <a href="#" onclick="go('import');return false">Garmin import</a> tab, or enter a recent 5 km time in <a href="#" onclick="go('settings');return false">Settings</a>. Until then the plan assumes a cautious 3:30 starting point with run/walk.</div>`;
+  }
+  html += `<div class="card"><div class="grid">
+    <div class="stat"><div class="k">Predicted ${distShort(P.D)} now</div><div class="v">${fmtTime(predR)}</div><div class="n">${predictHM(t) ? 'from your last 6 weeks' : state.settings.base5k ? 'from your 5k time' : 'assumed'}</div></div>
+    <div class="stat"><div class="k">Goal</div><div class="v">${esc(P.race.goal)}</div><div class="n">${fmtPace(P.goalPace)}</div></div>
+    <div class="stat"><div class="k">Still to find</div><div class="v">${gap>0 ? fmtTime(gap) : '🎉 0'}</div><div class="n">${gap>0 ? Math.round(gap/P.D)+' s per km' : 'on goal pace – stay healthy!'}</div></div>
+    <div class="stat"><div class="k">This week</div><div class="v">${thisWeekKm ? fmtDist(thisWeekKm) : '–'}</div><div class="n">of ${wk ? fmtDist(wk.plannedKm) : '–'} planned</div></div>
+  </div>
+  <div style="margin-top:12px" class="small muted">Progress from starting fitness (${fmtTime(toRace(P.startFit, P.D))}) to goal</div>
+  <div class="bar"><i style="width:${prog}%"></i></div>
+  ${best ? `<div class="small muted" style="margin-top:8px">🏅 Your best ${distShort(P.D)}: <b>${fmtTime(best.timeSec)}</b> (${esc(best.name || distLabel(P.D))}, ${best.date.slice(0,4)}).${best.timeSec <= P.goalT ? " You've already run faster than your goal." : ''}</div>` : ''}
+  ${easyCap() ? `<div class="small muted" style="margin-top:8px">❤️ Easy & long runs: keep heart rate under <b>${easyCap()} bpm</b>${lthr() ? ` (Zone 2, from your LTHR of ${lthr()})` : ` (≈78% of max ${mhr})`}. Walk to bring it down – that's fine.</div>` : ''}
+  </div>`;
+  if (wk){
+    html += `<div class="card"><h2>Week ${wk.w+1} of ${P.n} · ${wk.phase}${wk.cutback?' · cut-back':''}</h2>${wk.sessions.map(sessRow).join('')}</div>`;
+    const next = P.weeks[wk.w+1];
+    if (next) html += `<div class="card"><h2 class="muted">Next week · ${next.phase}</h2>${next.sessions.map(sessRow).join('')}</div>`;
+  } else {
+    html += `<div class="card">Race is done – congratulations! 🏅</div>`;
+  }
+  document.getElementById('tab-today').innerHTML = html;
+}
+
+function renderPlan(){
+  const t = today();
+  if (!PLAN){ document.getElementById('tab-plan').innerHTML = `<div class="card">No race yet – add one on the <a href="#" onclick="go('races');return false">Races</a> tab and your plan appears here.</div>`; return; }
+  let html = `<div class="card small muted">Building towards <b>${esc(PLAN.race.name)}</b> (${distLabel(PLAN.D)}). Plan built from week of ${parseYMD(state.settings.planStart).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}. Paces update automatically as you import new Garmin runs. Every 4th week is a lighter cut-back week.</div>`;
+  for (const wk of PLAN.weeks){
+    const doneN = wk.sessions.filter(x => x.kind!=='xt' && isDone(x)).length, tot = wk.sessions.filter(x => x.kind!=='xt').length;
+    const cur = t >= wk.mon && t < addDays(wk.mon,7);
+    html += `<details class="card week" ${cur?'open':''}><summary>
+      <span><b>Week ${wk.w+1}</b> · ${wk.mon.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} · ${wk.phase}${wk.cutback?' (cut-back)':''}</span>
+      <span class="small muted">${fmtDist(wk.plannedKm)} · ${doneN}/${tot} done</span></summary>
+      <div style="margin-top:8px">${wk.sessions.map(sessRow).join('')}</div></details>`;
+  }
+  document.getElementById('tab-plan').innerHTML = html;
+}
+
+function renderProgress(){
+  const P = PLAN, t = today(), D = P ? P.D : HM_KM;
+  const R = runs();
+  // weekly km: from 8 weeks before plan start up to race week (or the last 16 weeks with no race)
+  const first = P ? addDays(P.weeks[0].mon, -56) : addDays(mondayOf(t), -15*7);
+  const lastMon = P ? P.weeks[P.weeks.length-1].mon : mondayOf(t);
+  const cols = [];
+  for (let d = first; d <= lastMon; d = addDays(d,7)){
+    const a = ymd(d), b = ymd(addDays(d,7));
+    const actual = R.filter(r => r.date >= a && r.date < b).reduce((s,r)=>s+r.distKm,0);
+    const pw = P ? P.weeks.find(w => ymd(w.mon)===a) : null;
+    const hm = d <= t ? predictHM(addDays(d,6) < t ? addDays(d,6) : t) : null;
+    const pred = hm ? toRace(hm, D) : null;
+    cols.push({ d, actual, planned: pw ? pw.plannedKm : null, pred, future: d > t });
+  }
+  const W = 820, H = 200, padL = 34, padB = 22, n = cols.length, bw = (W-padL)/n;
+  const conv = km => U()==='mi' ? km/MI : km;
+  const maxKm = Math.max(10, ...cols.map(c => conv(Math.max(c.actual, c.planned||0))));
+  const y = v => H - padB - (v/maxKm)*(H-padB-10);
+  let bars = '';
+  cols.forEach((c,i) => {
+    const x = padL + i*bw;
+    if (c.planned) bars += `<rect x="${x+2}" y="${y(conv(c.planned))}" width="${bw-4}" height="${H-padB-y(conv(c.planned))}" fill="none" stroke="var(--accent)" stroke-dasharray="3 2" rx="3"/>`;
+    if (c.actual) bars += `<rect x="${x+4}" y="${y(conv(c.actual))}" width="${bw-8}" height="${H-padB-y(conv(c.actual))}" fill="var(--accent)" rx="3"/>`;
+    if (i % 2 === 0) bars += `<text x="${x+bw/2}" y="${H-6}" text-anchor="middle">${c.d.getDate()}/${c.d.getMonth()+1}</text>`;
+  });
+  for (let v = 0; v <= maxKm; v += maxKm > 40 ? 20 : 10) bars += `<line x1="${padL}" x2="${W}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${padL-6}" y="${y(v)+4}" text-anchor="end">${v}</text>`;
+
+  // prediction chart
+  const pts = cols.filter(c => c.pred);
+  const H2 = 200;
+  const gvals = P ? [P.goalT] : [];
+  const rawLo = Math.min(...gvals, ...pts.map(p=>p.pred)), rawHi = Math.max(...gvals.map(g => g*1.2), ...pts.map(p=>p.pred));
+  const padT = Math.max(60, (rawHi - rawLo)*0.1), lo = rawLo - padT, hi = rawHi + padT;
+  const step = hi - lo > 2400 ? 900 : hi - lo > 900 ? 300 : 60;
+  const y2 = v => 10 + (v-lo)/(hi-lo)*(H2-padB-10);
+  const xOf = c => padL + cols.indexOf(c)*bw + bw/2;
+  let line = '';
+  if (isFinite(lo)) for (let v = Math.ceil(lo/step)*step; v <= hi; v += step) line += `<line x1="${padL}" x2="${W}" y1="${y2(v)}" y2="${y2(v)}" stroke="var(--line)"/><text x="${padL-6}" y="${y2(v)+4}" text-anchor="end">${v >= 3600 ? fmtTime(v).slice(0,-3) : fmtTime(v)}</text>`;
+  if (P){
+    line += `<line x1="${padL}" x2="${W}" y1="${y2(P.goalT)}" y2="${y2(P.goalT)}" stroke="var(--race)" stroke-dasharray="5 3"/><text x="${W-4}" y="${y2(P.goalT)-5}" text-anchor="end" style="fill:var(--race)">goal ${esc(P.race.goal)}</text>`;
+    // target trajectory from plan start to race
+    const s0 = cols.find(c => ymd(c.d)===ymd(P.weeks[0].mon)), s1 = cols[cols.length-1];
+    if (s0) line += `<line x1="${xOf(s0)}" y1="${y2(toRace(P.startFit, D))}" x2="${xOf(s1)}" y2="${y2(P.goalT)}" stroke="var(--muted)" stroke-dasharray="2 4"/>`;
+  }
+  if (pts.length) line += `<polyline fill="none" stroke="var(--accent)" stroke-width="2.5" points="${pts.map(p => `${xOf(p)},${y2(p.pred)}`).join(' ')}"/>` + pts.map(p => `<circle cx="${xOf(p)}" cy="${y2(p.pred)}" r="3.5" fill="var(--accent)"><title>${fmtTime(p.pred)}</title></circle>`).join('');
+  cols.forEach((c,i) => { if (i%2===0) line += `<text x="${padL+i*bw+bw/2}" y="${H2-6}" text-anchor="middle">${c.d.getDate()}/${c.d.getMonth()+1}</text>`; });
+
+  const recent = R.slice(-40).reverse();
+  document.getElementById('tab-progress').innerHTML = progressTabs() + `<div id="prog-run" class="${progTab==='run'?'':'hidden'}">
+  <div class="card"><h2>Weekly running distance (${U()})</h2><div class="small muted">Solid = done · dashed = planned</div>
+    <svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Weekly distance chart">${bars}</svg></div>
+  <div class="card"><h2>Predicted ${distLabel(D).toLowerCase()} time</h2><div class="small muted">Best 6-week prediction from your runs (lower is better). Grey dotted line = on-track path to goal.</div>
+    ${pts.length ? `<svg viewBox="0 0 ${W} ${H2}" width="100%" role="img" aria-label="Prediction chart">${line}</svg>` : '<p class="muted">Import some runs to see this.</p>'}</div>
+  ${effortCard()}
+  <div class="card"><h2>Recent runs</h2>${recent.length ? `<div class="tablewrap"><table><tr><th>Date</th><th>Run</th><th class="num">Dist</th><th class="num">Time</th><th class="num">Pace</th><th class="num">HR</th><th class="num">Zone</th><th class="num">≈ ${distLabel(D).replace('Half marathon','Half')}</th></tr>
+    ${recent.map(r => `<tr><td>${r.date}</td><td>${esc(r.name||r.type)}</td><td class="num">${fmtDist(r.distKm)}</td><td class="num">${fmtTime(r.timeSec)}</td><td class="num">${fmtPace(r.timeSec/r.distKm)}</td><td class="num">${r.avgHR||''}</td><td class="num">${zoneOf(r.avgHR) ? 'Z'+zoneOf(r.avgHR) : ''}</td><td class="num">${r.distKm>=3?fmtTime(riegel(r.timeSec,r.distKm,D)):''}</td></tr>`).join('')}
+    </table></div>` : '<p class="muted">No runs yet.</p>'}</div></div>` + `<div id="prog-weight" class="${progTab==='weight'?'':'hidden'}">${weightPage()}</div>`;
+}
+
+function effortCard(){
+  const Z = zones(); if (!Z) return '';
+  const since = ymd(addDays(today(), -28));
+  const recent = runs().filter(r => r.date > since && r.avgHR);
+  const ref = recent.length >= 3 ? recent : runs().filter(r => r.avgHR).slice(-12);
+  const counts = [0,0,0,0,0,0]; ref.forEach(r => counts[zoneOf(r.avgHR)]++);
+  const tot = ref.length || 1, easyPct = Math.round((counts[0]+counts[1]+counts[2]) / tot * 100);
+  const colors = ['#94a3b8','#94a3b8','#22c55e','#eab308','#f97316','#ef4444'];
+  return `<div class="card"><h2>Effort check</h2>
+    <div class="small muted">Your ${ref===recent ? 'runs in the last 4 weeks' : 'last ' + ref.length + ' runs'} by average heart rate. Zones from LTHR ${lthr()}: ${Z.map(z => 'Z'+z.z+' '+z.lo+(z.hi?'–'+z.hi:'+')).join(' · ')}</div>
+    <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;margin:10px 0">${[1,2,3,4,5].map(z => counts[z] ? `<div title="Zone ${z}: ${counts[z]} runs" style="flex:${counts[z]};background:${colors[z]};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">Z${z}</div>` : '').join('')}</div>
+    <div class="small">${easyPct}% of runs averaged Zone 1–2. <b>Aim for about 75–80%.</b> ${easyPct < 60 ? 'Most of your running is too hard to recover from – slow the easy days right down and save the effort for Tuesdays.' : 'Nice – easy days are staying easy.'}</div>
+    <div class="small muted" style="margin-top:6px">Based on each run's average HR (Strava/Garmin summaries don't include second-by-second zone time).</div></div>`;
+}
+
+function renderGym(){
+  const A = [
+    ['Goblet squat · 10','One dumbbell held at your chest, sit down between your heels.'],
+    ['Dumbbell Romanian deadlift · 10','Same dumbbell(s). Soft knees, push hips back, feel the hamstrings.'],
+    ['Reverse lunge · 6 each leg','Step back, back knee gently towards the floor. Hold the dumbbells when easy.'],
+    ['Calf raise · 15','Holding the dumbbells, up fast, 3 seconds down. Calves take a beating in a half.'],
+  ];
+  const B = [
+    ['Step-up · 8 each leg','Onto a bench or box, drive through the front heel.'],
+    ['Single-leg glute bridge · 10 each','Shoulders on the floor or a bench, squeeze at the top.'],
+    ['Single-leg calf raise · 12 each','On a step edge, hold something for balance.'],
+    ['Plank 30 s + dead bug 8 each side','Core for holding your form in the last 5 km.'],
+  ];
+  const ex = list => list.map(([t,d]) => `<div class="ex"><b>${t}</b><span class="small muted">${d}</span></div>`).join('');
+  document.getElementById('tab-gym').innerHTML = `
+  <div class="card note"><b>10 minutes, ${state.settings.gymDays}× a week.</b> Grab one pair of dumbbells and a bench, stay in one spot, and go round the circuit <b>3 times</b> with no rest between moves and 30–45 s between rounds. Warm up with 1 min of leg swings and bodyweight squats (or do it straight after a run).<br><br>
+  Pick a weight where the last reps feel hard but clean (about 7–8 out of 10). When all 3 rounds feel easy, go up a dumbbell. Skip it if your legs are wrecked before a key run. Log it as "Strength" on your Garmin and it'll tick itself off.</div>
+  <div class="card"><h2><span class="pill p-gym">Gym A</span> 10 min legs <span class="small muted">· Mon</span></h2>${ex(A)}</div>
+  <div class="card"><h2><span class="pill p-gym">Gym B</span> 10 min hips & core <span class="small muted">· Fri</span></h2>${ex(B)}</div>
+  <div class="card"><h2>Want more from your gym visit?</h2><p class="small muted" style="margin:0">Add 10–15 min on the bike, cross-trainer or rower in <b>Zone 2</b> (under ${easyCap() || 170} bpm) before or after the circuit. That builds your aerobic engine, which is what you'll need on race day, without the pounding of extra running. Keep the hard efforts for Tuesday's run.</p></div>`;
+}
+
+function renderImport(){
+  const n = state.activities.length, r = runs().length;
+  document.getElementById('tab-import').innerHTML = stravaCard() + `
+  <div class="card"><h2>Import from Garmin (file)</h2>
+    <p class="small muted" style="margin-top:0">Two ways to get data out of Garmin Connect:</p>
+    <ol class="small">
+      <li><b>Quick (recommended weekly):</b> on connect.garmin.com go to <i>Activities → All Activities</i>, scroll down to load as many as you want, then click <b>Export CSV</b> (top right). Drop the file below.</li>
+      <li><b>Full history:</b> Garmin account → <i>Data Management → Export Your Data</i>. Unzip and drop the <code>*_summarizedActivities.json</code> file from <code>DI_CONNECT/DI-Connect-Fitness</code>.</li>
+    </ol>
+    <label>Distances in a CSV file are in</label>
+    <select id="impUnits"><option value="km">kilometres</option><option value="mi" ${U()==='mi'?'selected':''}>miles</option></select>
+    <div class="drop" id="drop" style="margin-top:12px">📂 Drop a Garmin CSV / JSON here, or tap to choose<input type="file" id="file" accept=".csv,.json" multiple class="hidden"></div>
+    <p class="small muted">Stored: ${n} activities (${r} runs). Re-importing the same file is safe – duplicates are skipped.</p>
+  </div>
+  <div class="card"><h2>Add a run manually</h2>
+    <div class="row"><div><label>Date</label><input type="date" id="mDate" value="${ymd(today())}"></div>
+    <div><label>Distance (${U()})</label><input id="mDist" inputmode="decimal" placeholder="5"></div>
+    <div><label>Time (h:mm:ss)</label><input id="mTime" placeholder="38:30"></div>
+    <div><label>Avg HR (optional)</label><input id="mHR" inputmode="numeric"></div></div>
+    <p><button class="btn" onclick="addManual()">Add run</button></p>
+  </div>
+  <div class="card"><h2>Backup</h2><p class="small muted" style="margin-top:0">Everything is saved in this browser only. Export a backup to move it to your phone or another computer.</p>
+    <button class="btn ghost" onclick="exportBackup()">Export backup</button>
+    <button class="btn ghost" onclick="document.getElementById('bk').click()">Restore backup</button><input type="file" id="bk" class="hidden" onchange="restoreBackup(this.files[0])">
+    <button class="btn danger" onclick="if(confirm('Delete all imported activities?')){state.activities=[];save();render();}">Clear activities</button>
+  </div>`;
+  const drop = document.getElementById('drop'), file = document.getElementById('file');
+  drop.onclick = () => file.click();
+  file.onchange = () => importFiles(file.files);
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('hover'); };
+  drop.ondragleave = () => drop.classList.remove('hover');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('hover'); importFiles(e.dataTransfer.files); };
+}
+
+function renderSettings(){
+  const s = state.settings;
+  document.getElementById('tab-settings').innerHTML = `
+  <div class="card"><h2>Your week</h2>
+    <p class="small muted" style="margin-top:0">Races and target times live on the <a href="#" onclick="go('races');return false">Races</a> tab.</p>
+    <div class="row">
+      <div><label>Distance units</label><select id="sUnits"><option value="km">km</option><option value="mi" ${s.units==='mi'?'selected':''}>miles</option></select></div>
+      <div><label>Runs per week</label><select id="sRuns"><option>3</option><option ${+s.runDays===4?'selected':''}>4</option></select></div>
+      <div><label>Gym sessions per week</label><select id="sGym"><option value="0">0</option><option value="1" ${+s.gymDays===1?'selected':''}>1</option><option value="2" ${+s.gymDays===2?'selected':''}>2</option></select></div>
+    </div>
+    <p class="small muted">Runs: Tue, Thu, Sun long (+ Sat if 4). Gym: Mon & Fri. Swap days freely – just keep the long run and a hard session apart.</p>
+  </div>
+  <div class="card"><h2>Fitness</h2>
+    <div class="row">
+      <div><label>Lactate threshold HR (Garmin)</label><input id="sLT" inputmode="numeric" value="${esc(s.lthr)}" placeholder="e.g. 191"></div>
+      <div><label>Resting HR</label><input id="sRest" inputmode="numeric" value="${esc(s.restHR)}" placeholder="e.g. 55"></div>
+      <div><label>Max heart rate (optional)</label><input id="sHR" inputmode="numeric" value="${esc(s.maxHR)}" placeholder="${effectiveMaxHR()||'e.g. 185'}"></div>
+      <div><label title="Only used if there are no recent runs">5 km time (optional)</label><input id="sBase" value="${esc(s.base5k)}" placeholder="e.g. 40:00"></div>
+    </div>
+    <div class="row">
+      <div><label>Weight units</label><select id="sWU"><option value="kg">kg</option><option value="st" ${s.wUnit==='st'?'selected':''}>stone & lb</option><option value="lb" ${s.wUnit==='lb'?'selected':''}>lb</option></select></div>
+      <div><label>Target weight (in those units)</label><input id="sTW" value="${s.targetKg ? fmtWeight(+s.targetKg) : ''}" placeholder="optional"></div>
+    </div>
+    <label>Plan starts (week of)</label><input type="date" id="sStart" value="${s.planStart}">
+    <p class="small muted">Starting fitness and long-run distances are based on the 6 weeks before this date. Move it forward to re-calibrate after a break.</p>
+  </div>
+  <p><button class="btn" onclick="saveSettings()">Save settings</button></p>`;
+}
+
+function saveSettings(){
+  const g = id => document.getElementById(id).value.trim();
+  Object.assign(state.settings, { units: g('sUnits'), runDays: +g('sRuns'), gymDays: +g('sGym'), maxHR: g('sHR'), lthr: g('sLT'), restHR: g('sRest'), wUnit: g('sWU'), base5k: g('sBase'), planStart: ymd(mondayOf(parseYMD(g('sStart')))) });
+  { const tw = g('sTW'); state.settings.targetKg = tw ? (Math.round(parseWeight(tw)*10)/10 || '') : ''; }
+  save(); render(); toast('Saved – plan updated');
+}
+function go(tab){ document.querySelector(`nav button[data-tab="${tab}"]`).click(); }
+
+/* ============================== import ============================== */
+function parseCSV(text){
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++){
+    const c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){ f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ','){ row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r'){ if (c==='\r' && text[i+1]==='\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f || row.length){ row.push(f); rows.push(row); }
+  return rows.filter(r => r.some(x => x.trim()));
+}
+function fromCSV(text, units){
+  const rows = parseCSV(text.replace(/^﻿/,''));
+  const h = rows.shift().map(x => x.trim().toLowerCase());
+  const col = (...names) => { for (const n of names){ const i = h.indexOf(n); if (i >= 0) return i; } return -1; };
+  const iType = col('activity type','type'), iDate = col('date','start time'), iTitle = col('title','name'),
+        iDist = col('distance'), iTime = col('time','moving time','elapsed time','duration'), iHR = col('avg hr','average heart rate'), iMax = col('max hr','max heart rate');
+  if (iDate < 0 || iDist < 0 || iTime < 0) throw new Error('This CSV does not look like a Garmin activities export (need Date, Distance, Time columns).');
+  const out = [];
+  for (const r of rows){
+    const date = (r[iDate]||'').trim().slice(0,10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+    const type = iType >= 0 ? r[iType] : 'Running';
+    let dist = num(r[iDist]); const t = parseTime(r[iTime]);
+    if (!isFinite(dist)) dist = 0;
+    if (units === 'mi') dist *= MI;
+    if (/swim/i.test(type) && dist > 100) dist /= 1000; // swims are exported in metres
+    out.push(mkAct(date, type, iTitle>=0 ? r[iTitle] : '', dist, t, num(r[iHR]), num(r[iMax])));
+  }
+  return out;
+}
+function fromJSON(obj){
+  const out = [];
+  const visit = o => {
+    if (Array.isArray(o)) return o.forEach(visit);
+    if (!o || typeof o !== 'object') return;
+    if ((o.startTimeLocal || o.beginTimestamp || o.startTimeGmt) && (o.distance != null || o.duration != null)){
+      const ts = o.startTimeLocal ?? o.beginTimestamp ?? o.startTimeGmt;
+      const d = typeof ts === 'number' ? new Date(ts) : new Date(String(ts).replace(' ','T'));
+      if (isNaN(d)) return;
+      const type = typeof o.activityType === 'string' ? o.activityType : (o.activityType?.typeKey || o.sportType || 'unknown');
+      // Garmin bulk export uses cm + ms; the API uses m + s. Pick the combo that gives a sane pace.
+      const D = +o.distance || 0, T = +(o.duration ?? o.elapsedDuration) || 0;
+      let best = [D/1000, T];
+      if (D && T){
+        const opts = [[D/1000,T],[D/100000,T],[D/1000,T/1000],[D/100000,T/1000]].filter(([km,s]) => km > 0.2 && s > 60);
+        const sane = opts.find(([km,s]) => s/km > 150 && s/km < 1500 && s < 8*3600);
+        if (sane) best = sane; else if (opts.length) best = opts[opts.length-1];
+      } else if (D > 100000) best = [D/100000, T];
+      out.push(mkAct(ymd(d), type, o.name || '', best[0], best[1], +o.avgHr || +o.averageHR, +o.maxHr || +o.maxHR));
+      return;
+    }
+    Object.values(o).forEach(visit);
+  };
+  visit(obj);
+  return out;
+}
+function mkAct(date, type, name, distKm, timeSec, avgHR, maxHR){
+  type = String(type||'').trim();
+  const isRun = /run/i.test(type) && !/indoor_rowing/i.test(type);
+  return { date, type, name: String(name||'').trim(), distKm: Math.round((distKm||0)*1000)/1000, timeSec: isFinite(timeSec) ? Math.round(timeSec) : 0,
+    avgHR: isFinite(avgHR) && avgHR > 0 ? Math.round(avgHR) : null, maxHR: isFinite(maxHR) && maxHR > 0 ? Math.round(maxHR) : null,
+    isRun: isRun && distKm > 0.2 && timeSec > 60 };
+}
+function merge(list){
+  // Same day + same kind + same distance (to 0.1 km) = same activity, whether it came from Garmin CSV or Strava
+  const key = a => `${a.date}|${a.isRun ? 'run' : a.type.toLowerCase().replace(/[^a-z]/g,'').slice(0,4)}|${a.distKm.toFixed(1)}`;
+  const have = new Set(state.activities.map(key));
+  const ids = new Set(state.activities.map(a => a.stravaId).filter(Boolean)); let added = 0;
+  for (const a of list){
+    const k = key(a);
+    if (a.stravaId && ids.has(a.stravaId)) continue;
+    if (!have.has(k)){ have.add(k); if (a.stravaId) ids.add(a.stravaId); state.activities.push(a); added++; }
+  }
+  return added;
+}
+async function importFiles(files){
+  let added = 0, total = 0;
+  const units = document.getElementById('impUnits')?.value || U();
+  for (const f of files){
+    try {
+      const text = await f.text();
+      const list = /\.json$/i.test(f.name) ? fromJSON(JSON.parse(text)) : fromCSV(text, units);
+      total += list.length; added += merge(list);
+    } catch(e){ alert(`${f.name}: ${e.message}`); }
+  }
+  save(); render(); toast(`Imported ${added} new of ${total} activities`);
+}
+function addManual(){
+  const d = document.getElementById('mDate').value, dist = num(document.getElementById('mDist').value), t = parseTime(document.getElementById('mTime').value);
+  if (!d || !(dist > 0) || !(t > 0)) return toast('Need date, distance and time');
+  merge([mkAct(d, 'Running', 'Manual entry', U()==='mi' ? dist*MI : dist, t, num(document.getElementById('mHR').value), null)]);
+  save(); render(); toast('Run added');
+}
+function exportBackup(){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(state)], {type:'application/json'}));
+  a.download = `workit-backup-${ymd(today())}.json`; a.click();
+}
+async function restoreBackup(f){
+  if (!f) return;
+  let s;
+  try {
+    const text = (await f.text()).replace(/^﻿/, '');
+    if (/^"?Activity Type/.test(text)) return alert(`"${f.name}" is your Garmin CSV, not a backup.\n\nDrop that one on the Garmin import box instead. The backup file is called workit-backup-<date>.json (check your Downloads folder).`);
+    s = JSON.parse(text);
+  } catch(e){ return alert(`Couldn't read "${f.name}" (${f.size} bytes) as a backup.\n\n${e.message}\n\nThe backup file is called workit-backup-<date>.json – check your Downloads folder.`); }
+  if (!s || !s.settings) return alert(`"${f.name}" is a JSON file, but not a Work It backup.\n\nThe backup file is called workit-backup-<date>.json.`);
+  try { state = migrate(s); save(); render(); toast('Backup restored'); if (state.strava.refresh) stravaSync(true); }
+  catch(e){ alert('Backup read OK but loading it failed: ' + e.message); }
+  document.getElementById('bk').value = '';
+}
+
+/* ============================== Strava sync ============================== */
+// Garmin → Strava (auto) → this app. Credentials and tokens live only in this browser's storage.
+// When served from localhost (node serve.js), Strava returns straight to the app; otherwise to a dead page you copy from.
+// Hosted (https) or local server: Strava returns straight to the app. Opened as a file: falls back to the copy-the-address flow.
+const REDIRECT = /^https?:$/.test(location.protocol) ? location.origin + location.pathname : 'http://localhost';
+function stravaCard(){
+  const sv = state.strava;
+  if (!sv.clientId || !sv.secret) return `
+  <div class="card"><h2>🔄 Strava sync (automatic)</h2>
+    <p class="small muted" style="margin-top:0">Your Garmin already sends everything to Strava, so the app can pull runs from there. One-off setup: create an app at <b>strava.com/settings/api</b> with Website <code>http://localhost</code> and Callback Domain <code>localhost</code>, then paste its details here.</p>
+    <div class="row"><div><label>Client ID</label><input id="svId" inputmode="numeric"></div><div><label>Client Secret</label><input id="svSecret" type="password"></div></div>
+    <p><button class="btn" onclick="stravaSaveCreds()">Save</button></p></div>`;
+  if (!sv.refresh) return `
+  <div class="card"><h2>🔄 Strava sync – connect</h2>
+    <p class="small"><b>1.</b> <a href="${stravaAuthUrl()}" target="_blank" rel="noopener">Open Strava and click Authorize</a>.</p>
+    <p class="small"><b>2.</b> You'll land on a page that says it can't connect (that's expected). Copy the <b>whole address</b> from the address bar and paste it here:</p>
+    <input id="svCode" placeholder="http://localhost/?state=&code=…&scope=…">
+    <p><button class="btn" onclick="stravaConnect(document.getElementById('svCode').value)">Connect</button>
+    <button class="btn ghost" onclick="stravaReset()">Change Client ID</button></p></div>`;
+  return `
+  <div class="card"><h2>🔄 Strava sync</h2>
+    <p class="small muted" style="margin-top:0">Connected${sv.athlete ? ' as <b>'+esc(sv.athlete)+'</b>' : ''} · last synced ${sv.lastSync ? new Date(sv.lastSync).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'}) : 'never'}. Syncs automatically when you open the app.</p>
+    <button class="btn" id="svBtn" onclick="stravaSync(true)">Sync now</button>
+    <button class="btn ghost" onclick="stravaSync(true, true)">Re-sync last 6 months</button>
+    <button class="btn danger" onclick="if(confirm('Disconnect Strava?'))stravaReset()">Disconnect</button></div>`;
+}
+const stravaAuthUrl = () => `https://www.strava.com/oauth/authorize?client_id=${encodeURIComponent(state.strava.clientId)}&response_type=code&redirect_uri=${encodeURIComponent(REDIRECT)}&approval_prompt=auto&scope=read,activity:read_all`;
+function stravaSaveCreds(){
+  const id = document.getElementById('svId').value.trim(), secret = document.getElementById('svSecret').value.trim();
+  if (!/^\d+$/.test(id) || secret.length < 20) return toast('Check the Client ID (a number) and Secret');
+  state.strava = { clientId: id, secret }; save(); render();
+}
+function stravaReset(){ state.strava = {}; save(); render(); }
+async function stravaToken(params){
+  const body = new URLSearchParams({ client_id: state.strava.clientId, client_secret: state.strava.secret, ...params });
+  const r = await fetch('https://www.strava.com/oauth/token', { method: 'POST', body });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.message || `Strava said ${r.status}`);
+  Object.assign(state.strava, { access: j.access_token, refresh: j.refresh_token, expires: j.expires_at });
+  if (j.athlete) state.strava.athlete = [j.athlete.firstname, j.athlete.lastname].filter(Boolean).join(' ');
+  save();
+}
+async function stravaConnect(pasted){
+  const m = String(pasted).match(/[?&]code=([^&\s]+)/);
+  const code = m ? m[1] : String(pasted).trim();
+  if (!code) return toast('Paste the address from the page Strava sent you to');
+  if (/[?&]scope=/.test(pasted) && !/activity:read/.test(decodeURIComponent(pasted))) return toast('Tick "View data about your activities" when you authorise');
+  try { await stravaToken({ code, grant_type: 'authorization_code' }); toast('Strava connected'); await stravaSync(true, true); }
+  catch(e){ alert('Could not connect: ' + e.message + '\n\nThe code only works once – go back to step 1 and try again.'); }
+}
+async function stravaSync(manual, full){
+  const sv = state.strava; if (!sv.refresh) return;
+  const btn = document.getElementById('svBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Syncing…'; }
+  try {
+    if (!sv.access || sv.expires*1000 < Date.now() + 60000) await stravaToken({ refresh_token: sv.refresh, grant_type: 'refresh_token' });
+    const after = full || !sv.lastSync ? Math.floor(Date.now()/1000) - 183*86400 : Math.floor(sv.lastSync/1000) - 3*86400;
+    const list = [];
+    for (let page = 1; page <= 10; page++){
+      const r = await fetch(`https://www.strava.com/api/v3/athlete/activities?after=${after}&per_page=200&page=${page}`, { headers: { Authorization: 'Bearer ' + state.strava.access } });
+      if (r.status === 401){ throw new Error('Strava access was revoked – disconnect and connect again.'); }
+      if (!r.ok) throw new Error(`Strava said ${r.status}`);
+      const arr = await r.json();
+      for (const a of arr){
+        const act = mkAct((a.start_date_local||'').slice(0,10), a.sport_type || a.type, a.name, (a.distance||0)/1000, a.moving_time || a.elapsed_time, a.average_heartrate, a.max_heartrate);
+        act.stravaId = a.id; list.push(act);
+      }
+      if (arr.length < 200) break;
+    }
+    const added = merge(list);
+    state.strava.lastSync = Date.now(); save(); render();
+    if (manual || added) toast(`Strava: ${added} new activit${added===1?'y':'ies'}`);
+  } catch(e){
+    if (manual) alert('Strava sync failed: ' + e.message); else toast('Strava sync failed');
+    render();
+  }
+}
+
+/* ============================== nav & boot ============================== */
+document.getElementById('nav').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  document.querySelectorAll('nav button').forEach(x => x.classList.toggle('on', x===b));
+  document.querySelectorAll('main > section').forEach(s => s.classList.toggle('hidden', s.id !== 'tab-'+b.dataset.tab));
+  window.scrollTo(0,0);
+};
+save();
+render();
+// If served from http://localhost and Strava redirected back here, finish connecting automatically.
+if (/[?&]code=/.test(location.search) && state.strava.clientId && !state.strava.refresh){
+  const href = location.href; history.replaceState(null, '', location.pathname); go('import'); stravaConnect(href);
+} else if (state.strava.refresh && Date.now() - (state.strava.lastSync||0) > 3600000) {
+  stravaSync(false);
+}
+// Offline support + installable on phones (needs https or localhost)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+</script>
+</body>
+</html>
