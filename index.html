@@ -512,11 +512,20 @@ function sessFeedback(x){
   const a = mainRun(x.date); if (!a) return '';
   const notes = []; let level = 'good';
   const bump = l => { if (l === 'bad' || (l === 'warn' && level === 'good')) level = l; };
-  const ratio = a.distKm / x.distKm;
-  if (ratio > 1.2){ notes.push(`${Math.round((ratio-1)*100)}% further than planned – fine now and then, but don't add any more this week.`); bump('warn'); }
+  // On a run/walk, compare the running distance with the plan (walking is the recovery, not extra load)
+  const runKm = hasWalks(a) && a.detail.runPace ? a.detail.runSec / a.detail.runPace : a.distKm;
+  const ratio = runKm / x.distKm;
+  if (ratio > 1.2){ notes.push(`${runKm < a.distKm ? `${fmtDist(runKm)} of running – ` : ''}${Math.round((ratio-1)*100)}% more than planned – fine now and then, but don't add any more this week.`); bump('warn'); }
   else if (ratio < 0.8) notes.push(`Shorter than planned – no problem, don't try to make it up later.`);
   const eff = sessEffort(x), cap = easyCap(), L = lthr(), z = zoneOf(a.avgHR);
-  if (a.avgHR && cap){
+  const d = a.detail && !a.detail.none ? a.detail : null;
+  if (hasWalks(a) && d.runHR && cap && eff === 'easy'){
+    // Run/walk: judge the running parts, not the average the walks pull down
+    notes.push(`Run/walk: ${mins(d.runSec)} running at avg ${d.runHR} bpm${d.runPace ? ` (${fmtPace(d.runPace)})` : ''}, ${mins(d.walkSec)} walking at ${d.walkHR ?? '–'} bpm. Overall avg ${a.avgHR}.`);
+    if (d.runHR > cap + 8){ notes.push(`The running bits were Zone ${zoneOf(d.runHR)} – the walks are doing their job, but slow the running right down so it stays nearer ${cap}.`); bump('warn'); }
+    else if (d.runHR > cap) notes.push(`Running bits just over ${cap} – that's what run/walk is for. Keep going like this.`);
+    else notes.push(`Even the running was easy. 👌`);
+  } else if (a.avgHR && cap){
     if (eff === 'easy'){
       if (a.avgHR > cap + 8){ notes.push(`Avg ${a.avgHR} bpm${z ? ` (Zone ${z})` : ''} – that was a hard run, not an easy one. Slow right down and walk sooner next time.`); bump('bad'); }
       else if (a.avgHR > cap){ notes.push(`Avg ${a.avgHR} bpm – just over your ${cap} limit. Nearly there.`); bump('warn'); }
@@ -527,7 +536,8 @@ function sessFeedback(x){
     }
   }
   if (!notes.length) notes.push('Spot on.');
-  return `<div class="fb fb-${level}">${{ good: '✅', warn: '⚠️', bad: '❤️‍🔥' }[level]} ${notes.join(' ')}</div>`;
+  const zs = zoneSplit(d);
+  return `<div class="fb fb-${level}">${{ good: '✅', warn: '⚠️', bad: '❤️‍🔥' }[level]} ${notes.join(' ')}${zs ? `<div class="small" style="margin-top:3px;opacity:.85">Time in zones: ${zs}</div>` : ''}</div>`;
 }
 
 // Should this week hold steady instead of progressing? Judged on the previous (finished) week.
@@ -558,7 +568,9 @@ function weekNotes(wk){
 function zone2Pace(){
   const cap = easyCap(); if (!cap) return null;
   const since = ymd(addDays(today(), -84));
-  const R = runs().filter(r => r.date > since && r.avgHR && r.distKm >= 2 && r.timeSec);
+  // Use the running-only part of run/walk sessions when Strava detail is available
+  const R = runs().filter(r => r.date > since && r.avgHR && r.distKm >= 2 && r.timeSec)
+    .map(r => hasWalks(r) && r.detail.runHR && r.detail.runPace ? { ...r, avgHR: r.detail.runHR, timeSec: r.detail.runPace, distKm: 1 } : r);
   const pace = r => r.timeSec / r.distKm;
   const inZone = R.filter(r => r.avgHR <= cap && r.avgHR >= cap - 15).map(pace).sort((a,b) => a - b);
   if (inZone.length >= 3) return inZone[Math.floor(inZone.length/2)];      // median of real Zone 2 runs
@@ -859,7 +871,16 @@ function effortCard(){
     <div class="small muted">Your ${ref===recent ? 'runs in the last 4 weeks' : 'last ' + ref.length + ' runs'} by average heart rate. Zones from LTHR ${lthr()}: ${Z.map(z => 'Z'+z.z+' '+z.lo+(z.hi?'–'+z.hi:'+')).join(' · ')}</div>
     <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;margin:10px 0">${[1,2,3,4,5].map(z => counts[z] ? `<div title="Zone ${z}: ${counts[z]} runs" style="flex:${counts[z]};background:${colors[z]};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">Z${z}</div>` : '').join('')}</div>
     <div class="small">${easyPct}% of runs averaged Zone 1–2. <b>Aim for about 75–80%.</b> ${easyPct < 60 ? 'Most of your running is too hard to recover from – slow the easy days right down and save the effort for Tuesdays.' : 'Nice – easy days are staying easy.'}</div>
-    <div class="small muted" style="margin-top:6px">Based on each run's average HR (Strava/Garmin summaries don't include second-by-second zone time).</div></div>`;
+    ${(() => { // real time in zones from Strava second-by-second data, when available
+      const det = runs().filter(r => r.date > since && r.detail?.zoneSec);
+      const zs = [0,0,0,0,0,0]; det.forEach(r => r.detail.zoneSec.forEach((s,i) => zs[i] += s));
+      const tot = zs.reduce((a,b) => a+b, 0);
+      if (!det.length || !tot) return `<div class="small muted" style="margin-top:6px">Based on each run's average HR. Runs synced from Strava also get real time-in-zones.</div>`;
+      const ez = Math.round((zs[0]+zs[1]+zs[2])/tot*100);
+      return `<div style="margin-top:12px"><b class="small">Actual time in zones</b> <span class="small muted">· ${det.length} run${det.length>1?'s':''} with Strava detail, last 4 weeks</span>
+        <div style="display:flex;height:22px;border-radius:6px;overflow:hidden;margin:8px 0">${[1,2,3,4,5].map(z => zs[z] ? `<div title="Zone ${z}: ${mins(zs[z])}" style="flex:${zs[z]};background:${colors[z]};color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center">${zs[z]/tot > 0.07 ? 'Z'+z : ''}</div>` : '').join('')}</div>
+        <div class="small">${ez}% of your running time was in Zone 1–2.</div></div>`;
+    })()}</div>`;
 }
 
 function renderGym(){
@@ -1025,12 +1046,13 @@ function mkAct(date, type, name, distKm, timeSec, avgHR, maxHR){
 function merge(list){
   // Same day + same kind + same distance (to 0.1 km) = same activity, whether it came from Garmin CSV or Strava
   const key = a => `${a.date}|${a.isRun ? 'run' : a.type.toLowerCase().replace(/[^a-z]/g,'').slice(0,4)}|${a.distKm.toFixed(1)}`;
-  const have = new Set(state.activities.map(key));
+  const have = new Map(state.activities.map(a => [key(a), a]));
   const ids = new Set(state.activities.map(a => a.stravaId).filter(Boolean)); let added = 0;
   for (const a of list){
     const k = key(a);
     if (a.stravaId && ids.has(a.stravaId)) continue;
-    if (!have.has(k)){ have.add(k); if (a.stravaId) ids.add(a.stravaId); state.activities.push(a); added++; }
+    if (!have.has(k)){ have.set(k, a); if (a.stravaId) ids.add(a.stravaId); state.activities.push(a); added++; }
+    else if (a.stravaId && !have.get(k).stravaId){ have.get(k).stravaId = a.stravaId; ids.add(a.stravaId); } // same run from Garmin CSV: remember its Strava id
   }
   return added;
 }
@@ -1121,6 +1143,53 @@ async function stravaConnect(pasted){
   try { await stravaToken({ code, grant_type: 'authorization_code' }); toast('Strava connected'); await stravaSync(true, true); }
   catch(e){ alert('Could not connect: ' + e.message + '\n\nThe code only works once – go back to step 1 and try again.'); }
 }
+/* Second-by-second detail for recent runs: split running from walking, real time in zones */
+async function stravaDetails(full){
+  const since = ymd(addDays(today(), full ? -60 : -45));
+  const todo = state.activities.filter(a => a.isRun && a.stravaId && !a.detail && a.date >= since).sort((a,b) => a.date < b.date ? 1 : -1).slice(0, 15);
+  let changed = false;
+  for (const a of todo){
+    try {
+      const r = await fetch(`https://www.strava.com/api/v3/activities/${a.stravaId}/streams?keys=time,heartrate,velocity_smooth,cadence,moving&key_by_type=true`, { headers: { Authorization: 'Bearer ' + state.strava.access } });
+      if (r.status === 429) break;                                  // Strava rate limit – try again next sync
+      if (!r.ok){ a.detail = { none: true }; changed = true; continue; }
+      a.detail = analyseStreams(await r.json()); changed = true;
+    } catch(e){ break; }
+  }
+  if (changed){ save(); render(); }
+}
+function analyseStreams(s){
+  const t = s.time?.data, hr = s.heartrate?.data, v = s.velocity_smooth?.data, cad = s.cadence?.data, mv = s.moving?.data;
+  if (!t || t.length < 10) return { none: true };
+  const hasCad = cad && cad.some(c => c > 0);
+  const Z = zones();
+  let runSec = 0, walkSec = 0, runHRs = 0, walkHRs = 0, runHRn = 0, walkHRn = 0, runM = 0, maxHR = 0;
+  const zoneSec = [0,0,0,0,0,0];
+  for (let i = 1; i < t.length; i++){
+    const dt = Math.min(10, t[i] - t[i-1]); if (dt <= 0) continue;
+    if (mv && mv[i] === false) continue;                            // paused
+    // Strava running cadence is per foot: ~80–90 running, ~50–60 walking. Fall back to speed.
+    const running = hasCad ? cad[i] >= 65 : (v?.[i] || 0) >= 1.9;
+    const h = hr?.[i];
+    if (running){ runSec += dt; runM += (v?.[i] || 0) * dt; if (h){ runHRs += h*dt; runHRn += dt; } }
+    else { walkSec += dt; if (h){ walkHRs += h*dt; walkHRn += dt; } }
+    if (h){ maxHR = Math.max(maxHR, h); if (Z) zoneSec[zoneOf(h) || 0] += dt; }
+  }
+  return {
+    runSec: Math.round(runSec), walkSec: Math.round(walkSec),
+    runHR: runHRn ? Math.round(runHRs/runHRn) : null, walkHR: walkHRn ? Math.round(walkHRs/walkHRn) : null,
+    runPace: runM > 200 ? Math.round(runSec / (runM/1000)) : null, maxHR: maxHR || null,
+    zoneSec: Z ? zoneSec.map(Math.round) : null,
+  };
+}
+const hasWalks = a => a?.detail && !a.detail.none && a.detail.walkSec > 60 && a.detail.walkSec > 0.08*(a.detail.runSec + a.detail.walkSec);
+function zoneSplit(d){ // "Z2 55% · Z3 30% · Z4 15%"
+  if (!d?.zoneSec) return '';
+  const tot = d.zoneSec.reduce((a,b) => a+b, 0); if (!tot) return '';
+  return d.zoneSec.map((s,z) => z && s/tot >= 0.05 ? `Z${z} ${Math.round(s/tot*100)}%` : '').filter(Boolean).join(' · ');
+}
+const mins = s => Math.round(s/60) + ' min';
+
 async function stravaSync(manual, full){
   const sv = state.strava; if (!sv.refresh) return;
   const btn = document.getElementById('svBtn'); if (btn){ btn.disabled = true; btn.textContent = 'Syncing…'; }
@@ -1141,6 +1210,7 @@ async function stravaSync(manual, full){
     }
     const added = merge(list);
     state.strava.lastSync = Date.now(); save(); render();
+    await stravaDetails(full);
     if (manual || added) toast(`Strava: ${added} new activit${added===1?'y':'ies'}`);
   } catch(e){
     if (manual) alert('Strava sync failed: ' + e.message); else toast('Strava sync failed');
