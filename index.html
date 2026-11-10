@@ -212,24 +212,75 @@ const runs = () => state.activities.filter(a => a.isRun).sort((a,b) => a.date < 
 // Riegel: T2 = T1 * (D2/D1)^1.06
 const riegel = (t, d, d2=HM_KM) => t * Math.pow(d2/d, 1.06);
 
-function predictHM(asOf){ // best HM prediction from runs >=3km in the 6 weeks up to asOf
+/* Predicted half-marathon time (as of a date). Two sources, best one wins:
+   1. 'run' – your best real run of 3 km+ in the last 6 weeks (Riegel formula)
+   2. 'hr'  – your heart-rate efficiency trend: how fast you run per unit of heart-rate reserve now,
+              compared with around your benchmark run. Lets easy runs show fitness gains.
+   Fallback 'old' – best run of the last 4 months, slowed 1% per week past 6 weeks. */
+function predictHM(asOf){ return predictInfo(asOf)?.t ?? null; }
+function predictInfo(asOf){
   const end = ymd(asOf), start = ymd(addDays(asOf,-42));
-  let best = Infinity;
-  for (const r of runs()) {
+  let r6 = null;
+  for (const r of runs()){
     if (r.date > end || r.date <= start || r.distKm < 3 || !r.timeSec) continue;
     const p = riegel(r.timeSec, r.distKm);
-    if (p < best) best = p;
+    if (!r6 || p < r6.t) r6 = { t: p, src: 'run', run: r };
   }
-  if (isFinite(best)) return best;
-  // Nothing in 6 weeks: use the best run from the last ~4 months, slowed 1% per week of rust
-  const old = ymd(addDays(asOf,-120));
-  for (const r of runs()) {
+  const hp = hrPredict(asOf);
+  if (hp && (!r6 || hp.t < r6.t)) return { t: hp.t, src: 'hr', run: hp.bench, ratio: hp.ratio };
+  if (r6) return r6;
+  const old = ymd(addDays(asOf,-120)); let best = null;
+  for (const r of runs()){
     if (r.date > end || r.date <= old || r.distKm < 3 || !r.timeSec) continue;
     const wks = daysBetween(parseYMD(r.date), asOf)/7;
     const p = riegel(r.timeSec, r.distKm) * (1 + 0.01*Math.max(0, wks-6));
-    if (p < best) best = p;
+    if (!best || p < best.t) best = { t: p, src: 'old', run: r };
   }
-  return isFinite(best) ? best : null;
+  return best;
+}
+// Running economy proxy: metres per second per unit of heart-rate reserve (Karvonen).
+// Uses the steady running parts of a run/walk (HR lags in short efforts, which would flatter it).
+function runEF(r){
+  const L = lthr(), rest = +state.settings.restHR;
+  if (!L || !(rest > 30 && rest < L - 40) || r.distKm < 2) return null;
+  const d = r.detail && !r.detail.none ? r.detail : null;
+  let hr, pace;
+  if (d && d.steadySec >= 300 && d.steadyHR && d.steadyPace){ hr = d.steadyHR; pace = d.steadyPace; }
+  else if (hasWalks(r)) return null;
+  else if (r.avgHR && r.timeSec){ hr = r.avgHR; pace = r.timeSec / r.distKm; }
+  else return null;
+  if (pace < 180 || pace > 720) return null;
+  const f = (hr - rest) / (L - rest);
+  if (f < 0.55 || f > 1.08) return null;
+  return (1000/pace) / f;
+}
+const median = a => { const s = a.slice().sort((x,y) => x-y); return s.length ? s[Math.floor(s.length/2)] : null; };
+function efBetween(from, to){ const v = runs().filter(r => r.date > from && r.date <= to).map(runEF).filter(Boolean); return v.length >= 2 ? median(v) : null; }
+function hrPredict(asOf){
+  const end = ymd(asOf), old = ymd(addDays(asOf, -120));
+  // Benchmark: your most recent hard effort of 3 km+ (avg HR ≥ 95% of LTHR, e.g. a time trial) in the
+  // last 4 months – so each time trial resets the baseline. If there isn't one, your best run.
+  const L = lthr(); if (!L) return null;
+  const cands = runs().filter(r => r.date <= end && r.date > old && r.distKm >= 3 && r.timeSec);
+  const hard = cands.filter(r => r.avgHR >= 0.95*L);
+  const bench = hard.length ? hard[hard.length-1] : cands.slice().sort((a,b) => riegel(a.timeSec,a.distKm) - riegel(b.timeSec,b.distKm))[0];
+  if (!bench) return null;
+  const bt = riegel(bench.timeSec, bench.distKm);
+  const bd = parseYMD(bench.date), bEnd = addDays(bd, 21) < asOf ? addDays(bd, 21) : asOf;
+  const efBase = efBetween(ymd(addDays(bd, -21)), ymd(bEnd));
+  const efNow = efBetween(ymd(addDays(asOf, -21)), end);
+  if (!efBase || !efNow) return null;
+  // Shrink the change a little (heart rate is noisy) and cap it at ±10–15%
+  const ratio = Math.min(1.10, Math.max(0.85, Math.pow(efBase / efNow, 0.75)));
+  return { t: bt * ratio, bench, ratio };
+}
+function predictSource(asOf){
+  const p = predictInfo(asOf);
+  if (!p) return state.settings.base5k ? 'from your 5k time' : 'assumed – add some runs';
+  const d = parseYMD(p.run.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'});
+  if (p.src === 'hr') return `heart-rate trend vs your ${d} run`;
+  if (p.src === 'old') return `from your ${d} run, adjusted for time off`;
+  return `from your ${fmtDist(p.run.distKm)} on ${d}`;
 }
 function bestHalf(){ // fastest actual half marathon in the history
   return runs().filter(r => r.distKm >= 20.9 && r.distKm <= 22.5 && r.timeSec).sort((a,b) => a.timeSec - b.timeSec)[0] || null;
@@ -501,6 +552,7 @@ function sessEffort(x){
   if (x.kind === 'race') return 'race';
   if (/tempo/i.test(x.title)) return 'tempo';
   if (/goal-pace|sharpener/i.test(x.title)) return 'goal';
+  if (/time trial/i.test(x.title)) return 'tt';
   return 'easy';
 }
 // The main (longest) run recorded on a date
@@ -510,6 +562,11 @@ function mainRun(date){ return runs().filter(r => r.date === date).sort((a,b) =>
 function sessFeedback(x){
   if (x.kind !== 'run' || x.date > ymd(today()) || !x.distKm) return '';
   const a = mainRun(x.date); if (!a) return '';
+  if (sessEffort(x) === 'tt'){
+    if (a.distKm < 4.5) return `<div class="fb fb-warn">⚠️ Recorded ${fmtDist(a.distKm)} – a time trial needs about 5 km on its own to count as a benchmark.</div>`;
+    const D = PLAN?.D || HM_KM;
+    return `<div class="fb fb-good">🏁 Time trial: ${fmtDist(a.distKm)} in <b>${fmtTime(a.timeSec)}</b> (${fmtPace(a.timeSec/a.distKm)}) → that predicts <b>${fmtTime(riegel(a.timeSec, a.distKm, D))}</b> for your ${distShort(D)}.${a.avgHR ? ` Avg ${a.avgHR} bpm.` : ''}</div>`;
+  }
   const notes = []; let level = 'good';
   const bump = l => { if (l === 'bad' || (l === 'warn' && level === 'good')) level = l; };
   // On a run/walk, compare the running distance with the plan (walking is the recovery, not extra load)
@@ -642,9 +699,12 @@ function buildPlan(){
       const bfast = isFinite(hh) && hh >= 7 ? ` Breakfast by ${hh-3}:${pad(mm||0)}.` : '';
       add(raceDow,'race',`RACE DAY – ${R0.name} 🏁`, `${where ? where + '.' : ''}${bfast} Goal ${esc(R0.goal)} = ${fmtPace(goalPace)}. Start 10–15 s/km slower for the first ${D > 15 ? '3 km' : 'km'}, settle in, push the last ${D > 15 ? '5 km' : 'quarter'}.${hrTarget("race", D)}`, D, goalPace);
     } else {
-      // quality session (Tue)
+      // quality session (Tue). In cut-back weeks the hard effort is Saturday's 5K time trial instead.
+      const tt = cutback;
       let q;
-      if (phase==='Base'){
+      if (tt){
+        q = ['Easy run', `${fmtDist(easyD)} easy at ~${fmtPace(easy)} – keep the legs fresh for Saturday's time trial.${rwTxt}${hrTarget("easy")}`, easyD, easy];
+      } else if (phase==='Base'){
         q = ['Easy + strides', `${fmtDist(easyD)} easy at ~${fmtPace(easy)}.${rwTxt}${w>=3 && !runWalk ? ' Finish with 4–6 × 20 s relaxed fast strides.' : ''}${hrTarget("easy")}`, easyD, easy];
       } else if (phase==='Build'){
         const buildW = Math.max(1, (n-5) - Math.ceil((n-5)*0.5));
@@ -660,7 +720,8 @@ function buildPlan(){
       }
       add(1,'run',q[0],q[1],q[2],q[3]);
       add(3,'run','Easy run', `${fmtDist(easyD)} easy at ~${fmtPace(easy)} – conversational.${rwTxt}${hrTarget("easy")} Heart rate beats pace: if it says slow down, slow down.`, easyD, easy);
-      if (+s.runDays >= 4) add(5,'run','Recovery jog', `${fmtDist(recD)} very easy. Slower than you think.${runWalk ? rwTxt : ''}${hrTarget("easy")}`, recD, easy*1.05);
+      if (tt) add(5,'run','5K time trial', `A parkrun is ideal (Saturday 9:00), or a flat 5 km on your own / treadmill at 1%. Jog 1–1.5 km to warm up – <b>save the warm-up as a separate activity</b> so the 5 km stands alone. Start at about ${fmtPace(tempo)} for the first 2 km, then push a little more each km. It's a fitness check: it updates your predicted race time.`, 5, null);
+      else if (+s.runDays >= 4) add(5,'run','Recovery jog', `${fmtDist(recD)} very easy. Slower than you think.${runWalk ? rwTxt : ''}${hrTarget("easy")}`, recD, easy*1.05);
       const lpTxt = (toGo===3||toGo===4) ? ` Run the last 3 km at goal pace ${fmtPace(goalPace)}.` : '';
       add(6,'run', cutback ? 'Long run (cut-back week)' : 'Long run', `${fmtDist(long)} at ~${fmtPace(easy*1.03)} – slow is fine, time on feet is the goal.${runWalk ? rwTxt : ''}${hrTarget("easy")}${lpTxt}`, long, easy*1.03);
       // gym
@@ -746,7 +807,7 @@ function renderToday(){
     html += `<div class="card note">👋 <b>Start here:</b> import your Garmin runs on the <a href="#" onclick="go('import');return false">Garmin import</a> tab, or enter a recent 5 km time in <a href="#" onclick="go('settings');return false">Settings</a>. Until then the plan assumes a cautious 3:30 starting point with run/walk.</div>`;
   }
   html += `<div class="card"><div class="grid">
-    <div class="stat"><div class="k">Predicted ${distShort(P.D)} now</div><div class="v">${fmtTime(predR)}</div><div class="n">${predictHM(t) ? 'from your last 6 weeks' : state.settings.base5k ? 'from your 5k time' : 'assumed'}</div></div>
+    <div class="stat"><div class="k">Predicted ${distShort(P.D)} now</div><div class="v">${fmtTime(predR)}</div><div class="n">${predictSource(t)}</div></div>
     <div class="stat"><div class="k">Goal</div><div class="v">${esc(P.race.goal)}</div><div class="n">${fmtPace(P.goalPace)}</div></div>
     <div class="stat"><div class="k">Still to find</div><div class="v">${gap>0 ? fmtTime(gap) : '🎉 0'}</div><div class="n">${gap>0 ? Math.round(gap/P.D)+' s per km' : 'on goal pace – stay healthy!'}</div></div>
     <div class="stat"><div class="k">This week</div><div class="v">${thisWeekKm ? fmtDist(thisWeekKm) : '–'}</div><div class="n">of ${wk ? fmtDist(wk.plannedKm) : '–'} planned</div></div>
@@ -1146,7 +1207,7 @@ async function stravaConnect(pasted){
 /* Second-by-second detail for recent runs: split running from walking, real time in zones */
 async function stravaDetails(full){
   const since = ymd(addDays(today(), full ? -60 : -45));
-  const todo = state.activities.filter(a => a.isRun && a.stravaId && !a.detail && a.date >= since).sort((a,b) => a.date < b.date ? 1 : -1).slice(0, 15);
+  const todo = state.activities.filter(a => a.isRun && a.stravaId && (!a.detail || (!a.detail.none && (a.detail.v || 1) < 2)) && a.date >= since).sort((a,b) => a.date < b.date ? 1 : -1).slice(0, 15);
   let changed = false;
   for (const a of todo){
     try {
@@ -1164,6 +1225,7 @@ function analyseStreams(s){
   const hasCad = cad && cad.some(c => c > 0);
   const Z = zones();
   let runSec = 0, walkSec = 0, runHRs = 0, walkHRs = 0, runHRn = 0, walkHRn = 0, runM = 0, maxHR = 0;
+  let streak = 0, stSec = 0, stM = 0, stHRs = 0, stHRn = 0; // "steady" = running continuously for 3+ min (HR has caught up)
   const zoneSec = [0,0,0,0,0,0];
   for (let i = 1; i < t.length; i++){
     const dt = Math.min(10, t[i] - t[i-1]); if (dt <= 0) continue;
@@ -1171,8 +1233,12 @@ function analyseStreams(s){
     // Strava running cadence is per foot: ~80–90 running, ~50–60 walking. Fall back to speed.
     const running = hasCad ? cad[i] >= 65 : (v?.[i] || 0) >= 1.9;
     const h = hr?.[i];
-    if (running){ runSec += dt; runM += (v?.[i] || 0) * dt; if (h){ runHRs += h*dt; runHRn += dt; } }
-    else { walkSec += dt; if (h){ walkHRs += h*dt; walkHRn += dt; } }
+    if (running){
+      runSec += dt; runM += (v?.[i] || 0) * dt; if (h){ runHRs += h*dt; runHRn += dt; }
+      streak += dt;
+      if (streak >= 180){ stSec += dt; stM += (v?.[i] || 0) * dt; if (h){ stHRs += h*dt; stHRn += dt; } }
+    }
+    else { walkSec += dt; streak = 0; if (h){ walkHRs += h*dt; walkHRn += dt; } }
     if (h){ maxHR = Math.max(maxHR, h); if (Z) zoneSec[zoneOf(h) || 0] += dt; }
   }
   return {
@@ -1180,6 +1246,8 @@ function analyseStreams(s){
     runHR: runHRn ? Math.round(runHRs/runHRn) : null, walkHR: walkHRn ? Math.round(walkHRs/walkHRn) : null,
     runPace: runM > 200 ? Math.round(runSec / (runM/1000)) : null, maxHR: maxHR || null,
     zoneSec: Z ? zoneSec.map(Math.round) : null,
+    steadySec: Math.round(stSec), steadyHR: stHRn ? Math.round(stHRs/stHRn) : null, steadyPace: stM > 200 ? Math.round(stSec / (stM/1000)) : null,
+    v: 2,
   };
 }
 const hasWalks = a => a?.detail && !a.detail.none && a.detail.walkSec > 60 && a.detail.walkSec > 0.08*(a.detail.runSec + a.detail.walkSec);
